@@ -19,7 +19,13 @@ func (s Store) createLink(w http.ResponseWriter, r *http.Request) {
 
 	link := string(body)
 
-	hash := random.GenerateRandomString(7)
+	var hash string
+	for {
+		hash = random.GenerateRandomString(7)
+		if _, ok := s.Links[hash]; !ok {
+			break
+		}
+	}
 
 	s.Links[hash] = link
 	w.Header().Set("Content-Type", "text/plain")
