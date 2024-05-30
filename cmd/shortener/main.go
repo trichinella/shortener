@@ -25,6 +25,7 @@ func (s Store) createLink(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write([]byte(s.BaseLink + hash))
+
 	if err != nil {
 		panic(err)
 	}
