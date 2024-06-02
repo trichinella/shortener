@@ -1,15 +1,20 @@
 package main
 
+import "strings"
+
 type MainConfig struct {
-	ShortLinkHost string
-	CurrentHost   string
-	Protocol      string
+	DisplayLink string
+	ServerHost  string
+}
+
+func (config *MainConfig) UpdateByOptions(o Options) {
+	config.ServerHost = o.ServerHost
+	config.DisplayLink = strings.Trim(o.DisplayLink, "/")
 }
 
 func NewConfig() *MainConfig {
 	return &MainConfig{
-		ShortLinkHost: "localhost:8080",
-		CurrentHost:   "localhost:8080",
-		Protocol:      "http",
+		DisplayLink: "http://localhost:8080",
+		ServerHost:  "localhost:8080",
 	}
 }

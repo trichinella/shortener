@@ -13,7 +13,7 @@ func (s CustomServer) Start() {
 	repo := CreateLocalRepository(s.Config)
 	router := GetRouter(repo)
 
-	err := http.ListenAndServe(s.Config.CurrentHost, router)
+	err := http.ListenAndServe(s.Config.ServerHost, router)
 	if err != nil {
 		panic(err)
 	}

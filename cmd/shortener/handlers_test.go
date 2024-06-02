@@ -31,7 +31,7 @@ func TestStore_CreateLinkPage(t *testing.T) {
 			url:  "http://ya.ru",
 			want: want{
 				code:        201,
-				response:    s.Config.Protocol + "://" + s.Config.ShortLinkHost,
+				response:    s.Config.DisplayLink,
 				contentType: "text/plain",
 			},
 		},

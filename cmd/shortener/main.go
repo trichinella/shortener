@@ -1,6 +1,15 @@
 package main
 
+import (
+	"flag"
+)
+
 func main() {
-	server := CreateServer(NewConfig())
+	flag.Parse()
+
+	config := NewConfig()
+	config.UpdateByOptions(options)
+
+	server := CreateServer(config)
 	server.Start()
 }

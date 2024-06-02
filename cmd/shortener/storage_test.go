@@ -19,7 +19,7 @@ func TestStore_CreateShortLink(t *testing.T) {
 		{
 			name: "Пример #1",
 			args: args{
-				host: "localhost:123",
+				host: "http://localhost:123",
 			},
 			link: "https://ya.ru",
 			want: "http://localhost:123",
@@ -27,7 +27,7 @@ func TestStore_CreateShortLink(t *testing.T) {
 		{
 			name: "Пример #2",
 			args: args{
-				host: "example.site:443",
+				host: "http://example.site:443",
 			},
 			link: "https://lib.ru",
 			want: "http://example.site:443",
@@ -35,7 +35,7 @@ func TestStore_CreateShortLink(t *testing.T) {
 		{
 			name: "Пример #3",
 			args: args{
-				host: "habr.ru:8080",
+				host: "http://habr.ru:8080",
 			},
 			link: "https://ya.ru",
 			want: "http://habr.ru:8080",
@@ -44,7 +44,7 @@ func TestStore_CreateShortLink(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := NewConfig()
-			config.ShortLinkHost = tt.args.host
+			config.DisplayLink = tt.args.host
 			s := CreateLocalRepository(config)
 
 			got := s.CreateShortLink(tt.link)
