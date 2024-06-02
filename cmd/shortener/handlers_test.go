@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -92,7 +93,7 @@ func TestStore_GetLinkPage(t *testing.T) {
 
 			}
 
-			assert.Equal(t, test.want.url, redirects[0].Url)
+			assert.Equal(t, test.want.url, redirects[0].URL.String())
 			assert.Equal(t, test.want.code, redirects[0].Code)
 		})
 	}
@@ -140,7 +141,7 @@ func TestBadRequest(t *testing.T) {
 }
 
 type Redirect struct {
-	Url  string
+	URL  *url.URL
 	Code int
 }
 
@@ -152,7 +153,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method string, path string, 
 	redirects := []Redirect{}
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		redirects = append(redirects, Redirect{
-			Url:  req.URL.String(),
+			URL:  req.URL,
 			Code: req.Response.StatusCode,
 		})
 		return nil
