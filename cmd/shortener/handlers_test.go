@@ -151,7 +151,10 @@ func testRequest(t *testing.T, ts *httptest.Server, method string, path string, 
 	}
 
 	resp, err := client.Do(req)
-	require.NoError(t, err)
+	if err != nil {
+		require.NoError(t, err)
+	}
+
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
