@@ -1,5 +1,6 @@
 package main
 
 func main() {
-	start()
+	server := CreateServer(NewConfig())
+	server.Start()
 }

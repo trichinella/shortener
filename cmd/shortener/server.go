@@ -1,16 +1,36 @@
 package main
 
-import "net/http"
+import (
+	"github.com/go-chi/chi/v5"
+	"net/http"
+)
 
-func start() {
-	mux := http.NewServeMux()
-	port := "8080"
+type CustomServer struct {
+	Config *MainConfig
+}
 
-	s := CreateStore("http://localhost:", "8080")
+func (s CustomServer) Start() {
+	repo := CreateLocalRepository(s.Config)
+	router := GetRouter(repo)
 
-	mux.HandleFunc(`/`, mainPage(s))
-	err := http.ListenAndServe(`:`+port, mux)
+	err := http.ListenAndServe(s.Config.CurrentHost, router)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func GetRouter(repo Repository) chi.Router {
+	r := chi.NewRouter()
+
+	r.Get(`/{hash}`, GetLinkPage(repo))
+	r.Post(`/`, CreateLinkPage(repo))
+	r.HandleFunc(`/*`, BadRequest())
+
+	return r
+}
+
+func CreateServer(config *MainConfig) CustomServer {
+	return CustomServer{
+		Config: config,
 	}
 }

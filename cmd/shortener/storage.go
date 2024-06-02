@@ -5,28 +5,28 @@ import (
 	"shortener/internal/app/random"
 )
 
-func CreateStore(baseLink string, port string) LocalRepository {
+func CreateLocalRepository(config *MainConfig) LocalRepository {
 	return LocalRepository{
-		BaseLink: baseLink + port + "/",
-		Links:    map[string]string{},
+		Config:    config,
+		UserLinks: map[string]string{},
 	}
 }
 
 // Repository Задел на будущее (моки)
 type Repository interface {
-	GetLink(urlPath string) (string, error)
-	CreateLink(link string) string
+	GetUserLink(hash string) (string, error)
+	CreateShortLink(userLink string) string
 }
 
-// Store Основная структура
+// LocalRepository Основная структура
 type LocalRepository struct {
-	Links    map[string]string
-	BaseLink string
+	UserLinks map[string]string
+	Config    *MainConfig
 }
 
-// Получить ссылку на основе URL
-func (s LocalRepository) GetLink(urlPath string) (string, error) {
-	val, ok := s.Links[urlPath[1:]]
+// GetUserLink Получить ссылку на основе URL
+func (s LocalRepository) GetUserLink(hash string) (string, error) {
+	val, ok := s.UserLinks[hash]
 	if !ok {
 		return val, fmt.Errorf("unknown key")
 	}
@@ -34,17 +34,17 @@ func (s LocalRepository) GetLink(urlPath string) (string, error) {
 	return val, nil
 }
 
-// Создать ссылку - пока будем хранить в мапе
-func (s LocalRepository) CreateLink(link string) string {
+// CreateShortLink Создать ссылку - пока будем хранить в мапе
+func (s LocalRepository) CreateShortLink(userLink string) string {
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
-		if _, ok := s.Links[hash]; !ok {
+		if _, ok := s.UserLinks[hash]; !ok {
 			break
 		}
 	}
 
-	s.Links[hash] = link
+	s.UserLinks[hash] = userLink
 
-	return s.BaseLink + hash
+	return s.Config.ShortLinkHost + "/" + hash
 }

@@ -1,107 +1,139 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"strings"
+	"testing"
+)
 
-func TestStore_createLink(t *testing.T) {
-	type fields struct {
-		Links    map[string]string
-		BaseLink string
+func TestStore_CreateShortLink(t *testing.T) {
+	type args struct {
+		host string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		link   string
-		want   string
+		name string
+		args args
+		link string
+		want string
 	}{
 		{
-			name: "Пример при пустом хранилище",
-			fields: fields{
-				Links:    map[string]string{},
-				BaseLink: "",
+			name: "Пример #1",
+			args: args{
+				host: "http://localhost:123",
 			},
 			link: "https://ya.ru",
+			want: "http://localhost:123",
 		},
 		{
-			name: "Пример при не пустом хранилище",
-			fields: fields{
-				Links:    map[string]string{},
-				BaseLink: "",
+			name: "Пример #2",
+			args: args{
+				host: "http://example.site:443",
 			},
 			link: "https://lib.ru",
+			want: "http://example.site:443",
 		},
 		{
-			name: "Пример при повторной ссылке",
-			fields: fields{
-				Links:    map[string]string{},
-				BaseLink: "",
+			name: "Пример #3",
+			args: args{
+				host: "http://habr.ru:8080",
 			},
 			link: "https://ya.ru",
+			want: "http://habr.ru:8080",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := LocalRepository{
-				Links:    tt.fields.Links,
-				BaseLink: tt.fields.BaseLink,
+			config := NewConfig()
+			config.ShortLinkHost = tt.args.host
+			s := CreateLocalRepository(config)
+
+			got := s.CreateShortLink(tt.link)
+
+			if len(got) == 0 {
+				t.Errorf("CreateShortLink() is empty, want > 0")
 			}
-			if got := s.CreateLink(tt.link); len(got) == 0 {
-				t.Errorf("createLink() is empty, want > 0")
+			if !strings.HasPrefix(got, tt.want) {
+				t.Errorf("CreateShortLink() has not prefix, got: %v,  want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestStore_getLink(t *testing.T) {
+func TestStore_GetUserLink(t *testing.T) {
 	type fields struct {
-		Links    map[string]string
-		BaseLink string
+		UserLinks map[string]string
+		Host      string
 	}
 
 	tests := []struct {
 		name    string
 		fields  fields
-		urlPath string
+		hash    string
 		want    string
 		wantErr error
 	}{
 		{
 			name: "Базовый функционал #1",
 			fields: fields{
-				Links: map[string]string{
+				UserLinks: map[string]string{
 					"qwerty":    "http://qwerty.ru",
 					"yaru12345": "http://ya.ru",
 				},
 			},
-			urlPath: "/qwerty",
+			hash:    "qwerty",
 			want:    "http://qwerty.ru",
 			wantErr: nil,
 		},
 		{
 			name: "Базовый функционал #2",
 			fields: fields{
-				Links: map[string]string{
+				UserLinks: map[string]string{
 					"qwerty":    "http://qwerty.ru",
 					"yaru12345": "http://ya.ru",
 				},
 			},
-			urlPath: "/yaru12345",
+			hash:    "yaru12345",
 			want:    "http://ya.ru",
 			wantErr: nil,
+		},
+		{
+			name: "Не найдено #1",
+			fields: fields{
+				UserLinks: map[string]string{
+					"qwerty":    "http://qwerty.ru",
+					"yaru12345": "http://ya.ru",
+				},
+			},
+			hash:    "unknown",
+			wantErr: fmt.Errorf("unknown key"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			config := NewConfig()
 			s := LocalRepository{
-				Links:    tt.fields.Links,
-				BaseLink: tt.fields.BaseLink,
+				UserLinks: tt.fields.UserLinks,
+				Config:    config,
 			}
-			got, err := s.GetLink(tt.urlPath)
-			if err != tt.wantErr {
-				t.Errorf("getLink() error = %v, wantErr %v", err, tt.wantErr)
+			got, err := s.GetUserLink(tt.hash)
+
+			if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
+				t.Errorf("GetUserLink() got error = %v, want error = %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("getLink() got = %v, want %v", got, tt.want)
+
+			if err != nil && tt.wantErr == nil {
+				t.Errorf("GetUserLink() got error = %v, want error = %v", err, tt.wantErr)
+				return
+			}
+
+			if err == nil && tt.wantErr != nil {
+				t.Errorf("GetUserLink() got error = %v, want error = %v", err, tt.wantErr)
+				return
+			}
+
+			if err == nil && got != tt.want {
+				t.Errorf("GetUserLink() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
