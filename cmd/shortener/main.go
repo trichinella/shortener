@@ -9,6 +9,7 @@ func main() {
 
 	config := NewConfig()
 	config.UpdateByOptions(options)
+	config.UpdateByEnv()
 
 	server := CreateServer(config)
 	server.Start()
