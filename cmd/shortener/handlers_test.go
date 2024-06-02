@@ -15,10 +15,7 @@ func TestStore_CreateLinkPage(t *testing.T) {
 	s := CreateLocalRepository(NewConfig())
 	ts := httptest.NewServer(GetRouter(s))
 	defer ts.Close()
-	type args struct {
-		code int
-		url  string
-	}
+
 	type want struct {
 		code        int
 		response    string
@@ -26,14 +23,12 @@ func TestStore_CreateLinkPage(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		url  string
 		want want
 	}{
 		{
 			name: "Base",
-			args: args{
-				url: "http://ya.ru",
-			},
+			url:  "http://ya.ru",
 			want: want{
 				code:        201,
 				response:    s.Config.Protocol + "://" + s.Config.ShortLinkHost,
@@ -44,7 +39,7 @@ func TestStore_CreateLinkPage(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res, get, _ := testRequest(t, ts, http.MethodPost, "/", strings.NewReader(test.args.url))
+			res, get, _ := testRequest(t, ts, http.MethodPost, "/", strings.NewReader(test.url))
 
 			// проверяем код ответа
 			assert.Equal(t, test.want.code, res.StatusCode)
@@ -60,10 +55,6 @@ func TestStore_GetLinkPage(t *testing.T) {
 	ts := httptest.NewServer(GetRouter(s))
 	defer ts.Close()
 
-	type args struct {
-		code int
-		url  string
-	}
 	type want struct {
 		code int
 		url  string
@@ -72,7 +63,6 @@ func TestStore_GetLinkPage(t *testing.T) {
 		name string
 		hash string
 		want want
-		args args
 	}{
 		{
 			name: "Base",
@@ -156,8 +146,6 @@ func testRequest(t *testing.T, ts *httptest.Server, method string, path string, 
 			URL:  req.URL,
 			Code: req.Response.StatusCode,
 		})
-
-		defer req.Body.Close()
 
 		return nil
 	}
