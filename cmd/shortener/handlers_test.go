@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -147,7 +146,6 @@ type Redirect struct {
 }
 
 func testRequest(t *testing.T, ts *httptest.Server, method string, path string, body io.Reader) (*http.Response, string, []Redirect) {
-	fmt.Println("testRequest", ts.URL+path)
 	req, err := http.NewRequest(method, ts.URL+path, body)
 	require.NoError(t, err)
 
@@ -158,6 +156,9 @@ func testRequest(t *testing.T, ts *httptest.Server, method string, path string, 
 			URL:  req.URL,
 			Code: req.Response.StatusCode,
 		})
+
+		defer req.Body.Close()
+
 		return nil
 	}
 
