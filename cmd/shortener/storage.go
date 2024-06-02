@@ -46,5 +46,5 @@ func (s LocalRepository) CreateShortLink(userLink string) string {
 
 	s.UserLinks[hash] = userLink
 
-	return "http://" + s.Config.ShortLinkHost + "/" + hash
+	return s.Config.Protocol + "://" + s.Config.ShortLinkHost + "/" + hash
 }

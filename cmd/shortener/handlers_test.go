@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -36,7 +37,7 @@ func TestStore_CreateLinkPage(t *testing.T) {
 			},
 			want: want{
 				code:        201,
-				response:    s.Config.ShortLinkHost,
+				response:    s.Config.Protocol + "://" + s.Config.ShortLinkHost,
 				contentType: "text/plain",
 			},
 		},
@@ -49,7 +50,7 @@ func TestStore_CreateLinkPage(t *testing.T) {
 			// проверяем код ответа
 			assert.Equal(t, test.want.code, res.StatusCode)
 			// получаем и проверяем тело запроса
-			assert.Equal(t, true, strings.HasPrefix(get, s.Config.ShortLinkHost))
+			assert.Equal(t, true, strings.HasPrefix(get, test.want.response))
 			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
 		})
 	}
@@ -76,7 +77,7 @@ func TestStore_GetLinkPage(t *testing.T) {
 	}{
 		{
 			name: "Base",
-			hash: strings.Split(s.CreateShortLink("http://ya.ru"), "/")[1],
+			hash: strings.Split(s.CreateShortLink("http://ya.ru"), "/")[3],
 			want: want{
 				code: http.StatusTemporaryRedirect,
 				url:  "http://ya.ru",
@@ -146,6 +147,7 @@ type Redirect struct {
 }
 
 func testRequest(t *testing.T, ts *httptest.Server, method string, path string, body io.Reader) (*http.Response, string, []Redirect) {
+	fmt.Println("testRequest", ts.URL+path)
 	req, err := http.NewRequest(method, ts.URL+path, body)
 	require.NoError(t, err)
 
