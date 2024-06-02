@@ -141,14 +141,14 @@ func testRequest(t *testing.T, ts *httptest.Server, method string, path string, 
 
 	client := ts.Client()
 	redirects := []Redirect{}
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		redirects = append(redirects, Redirect{
-			URL:  req.URL,
-			Code: req.Response.StatusCode,
-		})
-
-		return nil
-	}
+	//client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	//	redirects = append(redirects, Redirect{
+	//		URL:  req.URL,
+	//		Code: req.Response.StatusCode,
+	//	})
+	//
+	//	return nil
+	//}
 
 	resp, err := client.Do(req)
 	if err != nil {
