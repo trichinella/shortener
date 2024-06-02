@@ -40,6 +40,10 @@ func TestStore_CreateLinkPage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			res, get, _ := testRequest(t, ts, http.MethodPost, "/", strings.NewReader(test.url))
+			err := res.Body.Close()
+			if err != nil {
+				require.NoError(t, err)
+			}
 
 			// проверяем код ответа
 			assert.Equal(t, test.want.code, res.StatusCode)
@@ -76,7 +80,11 @@ func TestStore_GetLinkPage(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, _, redirects := testRequest(t, ts, http.MethodGet, "/"+test.hash, nil)
+			res, _, redirects := testRequest(t, ts, http.MethodGet, "/"+test.hash, nil)
+			err := res.Body.Close()
+			if err != nil {
+				require.NoError(t, err)
+			}
 
 			if len(redirects) == 0 {
 				t.Fatalf("There is not redirect")
@@ -119,7 +127,13 @@ func TestBadRequest(t *testing.T) {
 			// проверяем код ответа
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			// получаем и проверяем тело запроса
-			defer res.Body.Close()
+			defer func() {
+				err := res.Body.Close()
+				if err != nil {
+					require.NoError(t, err)
+				}
+			}()
+
 			resBody, err := io.ReadAll(res.Body)
 
 			require.NoError(t, err)
@@ -154,7 +168,6 @@ func testRequest(t *testing.T, ts *httptest.Server, method string, path string, 
 		require.NoError(t, err)
 	}
 
-	//Может на это ругается анализатор?
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
