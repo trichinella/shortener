@@ -7,14 +7,14 @@ import (
 	"net/http"
 )
 
-// Руками делим запросы - либо получить ссылку, либо создать ее, иначе плохой запрос
+// BadRequest Руками делим запросы - либо получить ссылку, либо создать ее, иначе плохой запрос
 func BadRequest(err error, statusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), statusCode)
 	}
 }
 
-// Страница создания ссылки
+// CreateLinkPage Страница создания ссылки
 func CreateLinkPage(repository Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
@@ -51,7 +51,7 @@ func CreateLinkPage(repository Repository) http.HandlerFunc {
 	}
 }
 
-// Страница получения ссылки
+// GetLinkPage Страница получения ссылки
 func GetLinkPage(repository Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := chi.URLParam(r, "hash")
