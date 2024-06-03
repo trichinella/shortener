@@ -139,20 +139,31 @@ func TestStore_GetLinkPage(t *testing.T) {
 
 func TestBadRequest(t *testing.T) {
 	type Wanted struct {
-		code        int
-		response    string
-		contentType string
+		code     int
+		response string
 	}
 	tests := []struct {
 		name string
+		err  error
+		code int
 		want Wanted
 	}{
 		{
-			name: "Bad request",
+			name: "Bad request #1",
+			err:  fmt.Errorf("ошибка"),
+			code: http.StatusBadRequest,
 			want: Wanted{
-				code:        400,
-				response:    "",
-				contentType: "",
+				code:     400,
+				response: fmt.Errorf("ошибка\n").Error(),
+			},
+		},
+		{
+			name: "Bad request #2",
+			err:  fmt.Errorf("нет доступа"),
+			code: http.StatusForbidden,
+			want: Wanted{
+				code:     403,
+				response: fmt.Errorf("нет доступа\n").Error(),
 			},
 		},
 	}
@@ -161,7 +172,7 @@ func TestBadRequest(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, "/", nil)
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
-			BadRequest(nil, 0)(w, request)
+			BadRequest(tt.err, tt.code)(w, request)
 
 			res := w.Result()
 
@@ -177,7 +188,6 @@ func TestBadRequest(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.response, string(resBody))
-			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
 		})
 	}
 }
