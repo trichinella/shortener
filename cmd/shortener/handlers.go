@@ -32,12 +32,6 @@ func CreateLinkPage(repository Repository) http.HandlerFunc {
 			return
 		}
 
-		contentType := r.Header.Get("Content-Type")
-		if contentType != "text/plain" {
-			BadRequest(fmt.Errorf("Content-Type must be \"text/plain\""), http.StatusBadRequest)(w, r)
-			return
-		}
-
 		link := string(body)
 		hashedLink := repository.CreateShortLink(link)
 

@@ -58,16 +58,6 @@ func TestStore_CreateLinkPage(t *testing.T) {
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
-		{
-			name:        "Incorrect content type",
-			body:        strings.NewReader("http://ya.ru"),
-			contentType: "image/png",
-			want: want{
-				code:        400,
-				response:    fmt.Errorf("Content-Type must be \"text/plain\"\n").Error(),
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
 	}
 
 	for _, test := range tests {
