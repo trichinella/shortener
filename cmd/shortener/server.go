@@ -24,7 +24,6 @@ func GetRouter(repo Repository) chi.Router {
 
 	r.Get(`/{hash}`, GetLinkPage(repo))
 	r.Post(`/`, CreateLinkPage(repo))
-	r.HandleFunc(`/*`, BadRequest())
 
 	return r
 }

@@ -5,8 +5,7 @@ import (
 	"time"
 )
 
-// Честно взятая из интернета функция для получения рандомной строки
-// Seed зафиксировал для упрощения работы с локальным API
+// GenerateRandomString Честно взятая из интернета функция для получения рандомной строки
 func GenerateRandomString(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	seed := rand.NewSource(time.Now().UnixNano())

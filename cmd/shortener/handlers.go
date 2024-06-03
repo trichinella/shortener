@@ -1,15 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
 )
 
 // Руками делим запросы - либо получить ссылку, либо создать ее, иначе плохой запрос
-func BadRequest() http.HandlerFunc {
+func BadRequest(err error, statusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), statusCode)
 	}
 }
 
@@ -21,8 +22,19 @@ func CreateLinkPage(repository Repository) http.HandlerFunc {
 			panic(err)
 		}
 
+		err = r.Body.Close()
+		if err != nil {
+			panic(err)
+		}
+
 		if len(body) == 0 {
-			BadRequest()(w, r)
+			BadRequest(fmt.Errorf("body is empty"), http.StatusBadRequest)(w, r)
+			return
+		}
+
+		contentType := r.Header.Get("Content-Type")
+		if contentType != "text/plain" {
+			BadRequest(fmt.Errorf("Content-Type must be \"text/plain\""), http.StatusBadRequest)(w, r)
 			return
 		}
 
@@ -46,7 +58,7 @@ func GetLinkPage(repository Repository) http.HandlerFunc {
 		val, err := repository.GetUserLink(hash)
 
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			BadRequest(err, http.StatusBadRequest)(w, r)
 			return
 		}
 
