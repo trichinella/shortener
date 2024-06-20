@@ -16,15 +16,15 @@ type CustomServer struct {
 	Router *chi.Mux
 }
 
-func (s CustomServer) Prepare() {
+func (s *CustomServer) Prepare() {
 	localRepo := repo.CreateLocalRepository(s.Config)
 	s.Router = chi.NewRouter()
-
 	s.Router.Use(middleware.LogMiddleware(s.Logger.Sugar()))
 	fillHandler(s.Router, localRepo)
 }
 
-func (s CustomServer) Start() {
+func (s *CustomServer) Start() {
+	s.Logger.Sugar().Infow("Listen and serve", "Host", s.Config.ServerHost)
 	err := http.ListenAndServe(s.Config.ServerHost, s.Router)
 	if err != nil {
 		panic(err)
