@@ -1,6 +1,8 @@
 package main
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+)
 
 // NewConsoleLogger Разместил здесь, потому что иначе тесты ругаются
 func NewConsoleLogger() *zap.Logger {
@@ -11,11 +13,9 @@ func NewConsoleLogger() *zap.Logger {
 	}
 	// это нужно добавить, если логер буферизован
 	// в данном случае не буферизован, но привычка хорошая
+	//не знаю, как обрабатывать ошибку
 	defer func() {
-		err := logger.Sync()
-		if err != nil {
-			panic(err)
-		}
+		_ = logger.Sync()
 	}()
 
 	return logger
