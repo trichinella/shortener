@@ -18,11 +18,10 @@ type CustomServer struct {
 
 func (s CustomServer) Prepare() {
 	localRepo := repo.CreateLocalRepository(s.Config)
-	router := chi.NewRouter()
+	s.Router = chi.NewRouter()
 
-	router.Use(middleware.LogMiddleware(s.Logger.Sugar()))
-	fillHandler(router, localRepo)
-	s.Router = router
+	s.Router.Use(middleware.LogMiddleware(s.Logger.Sugar()))
+	fillHandler(s.Router, localRepo)
 }
 
 func (s CustomServer) Start() {
