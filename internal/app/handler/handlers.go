@@ -1,13 +1,13 @@
-package main
+package handler
 
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
+	"shortener/internal/app/repo"
 )
 
-// BadRequest Руками делим запросы - либо получить ссылку, либо создать ее, иначе плохой запрос
 func BadRequest(err error, statusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), statusCode)
@@ -15,7 +15,7 @@ func BadRequest(err error, statusCode int) http.HandlerFunc {
 }
 
 // CreateLinkPage Страница создания ссылки
-func CreateLinkPage(repository Repository) http.HandlerFunc {
+func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -46,7 +46,7 @@ func CreateLinkPage(repository Repository) http.HandlerFunc {
 }
 
 // GetLinkPage Страница получения ссылки
-func GetLinkPage(repository Repository) http.HandlerFunc {
+func GetLinkPage(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := chi.URLParam(r, "hash")
 		val, err := repository.GetUserLink(hash)

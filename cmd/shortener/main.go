@@ -2,15 +2,21 @@ package main
 
 import (
 	"flag"
+	"shortener/internal/app/config"
+	"shortener/internal/app/server"
 )
 
 func main() {
 	flag.Parse()
 
-	config := NewConfig()
-	config.UpdateByOptions(options)
-	config.UpdateByEnv()
+	//Заполнение конфига
+	cfg := config.NewConfig()
+	cfg.UpdateByOptions(config.BaseOptions)
+	cfg.UpdateByEnv()
 
-	server := CreateServer(config)
-	server.Start()
+	consoleLogger := NewConsoleLogger()
+
+	srv := server.CreateServer(cfg, consoleLogger)
+	srv.Prepare()
+	srv.Start()
 }

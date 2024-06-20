@@ -1,11 +1,12 @@
-package main
+package repo
 
 import (
 	"fmt"
+	"shortener/internal/app/config"
 	"shortener/internal/app/random"
 )
 
-func CreateLocalRepository(config *MainConfig) LocalRepository {
+func CreateLocalRepository(config *config.MainConfig) LocalRepository {
 	return LocalRepository{
 		Config:    config,
 		UserLinks: map[string]string{},
@@ -21,7 +22,7 @@ type Repository interface {
 // LocalRepository Основная структура
 type LocalRepository struct {
 	UserLinks map[string]string
-	Config    *MainConfig
+	Config    *config.MainConfig
 }
 
 // GetUserLink Получить ссылку на основе URL

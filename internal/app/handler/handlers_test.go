@@ -1,20 +1,25 @@
-package main
+package handler
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"shortener/internal/app/config"
+	"shortener/internal/app/repo"
 	"strings"
 	"testing"
 )
 
 func TestStore_CreateLinkPage(t *testing.T) {
-	s := CreateLocalRepository(NewConfig())
-	ts := httptest.NewServer(GetRouter(s))
+	s := repo.CreateLocalRepository(config.NewConfig())
+	router := chi.NewRouter()
+	router.Post(`/`, CreateLinkPage(s))
+	ts := httptest.NewServer(router)
 	defer ts.Close()
 
 	type want struct {
@@ -81,8 +86,10 @@ func TestStore_CreateLinkPage(t *testing.T) {
 }
 
 func TestStore_GetLinkPage(t *testing.T) {
-	s := CreateLocalRepository(NewConfig())
-	ts := httptest.NewServer(GetRouter(s))
+	s := repo.CreateLocalRepository(config.NewConfig())
+	router := chi.NewRouter()
+	router.Get(`/{hash}`, GetLinkPage(s))
+	ts := httptest.NewServer(router)
 	defer ts.Close()
 
 	type want struct {

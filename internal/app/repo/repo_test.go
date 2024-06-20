@@ -1,7 +1,8 @@
-package main
+package repo
 
 import (
 	"fmt"
+	"shortener/internal/app/config"
 	"strings"
 	"testing"
 )
@@ -43,9 +44,9 @@ func TestStore_CreateShortLink(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := NewConfig()
-			config.DisplayLink = tt.args.host
-			s := CreateLocalRepository(config)
+			cfg := config.NewConfig()
+			cfg.DisplayLink = tt.args.host
+			s := CreateLocalRepository(cfg)
 
 			got := s.CreateShortLink(tt.link)
 
@@ -110,10 +111,10 @@ func TestStore_GetUserLink(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := NewConfig()
+			cfg := config.NewConfig()
 			s := LocalRepository{
 				UserLinks: tt.fields.UserLinks,
-				Config:    config,
+				Config:    cfg,
 			}
 			got, err := s.GetUserLink(tt.hash)
 
