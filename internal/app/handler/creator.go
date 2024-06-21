@@ -39,9 +39,9 @@ func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 	}
 }
 
-// CreateLinkPageJson Похожа на CreateLinkPage, но отличается тем, что есть JSON. Думал об объединении методов
+// CreateLinkPageJSON Похожа на CreateLinkPage, но отличается тем, что есть JSON. Думал об объединении методов
 // пришел к выводу, что не рентабельно
-func CreateLinkPageJson(repository repo.Repository) http.HandlerFunc {
+func CreateLinkPageJSON(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -58,22 +58,22 @@ func CreateLinkPageJson(repository repo.Repository) http.HandlerFunc {
 			return
 		}
 
-		inputUrl := &InputUrl{}
-		err = easyjson.Unmarshal(body, inputUrl)
+		inputURL := &InputURL{}
+		err = easyjson.Unmarshal(body, inputURL)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)
 			return
 		}
 
-		if len(inputUrl.Url) == 0 {
+		if len(inputURL.URL) == 0 {
 			BadRequest(fmt.Errorf("URL is empty"), http.StatusBadRequest)(w, r)
 			return
 		}
 
-		hashedLink := repository.CreateShortLink(inputUrl.Url)
+		hashedLink := repository.CreateShortLink(inputURL.URL)
 
-		outputUrl := &OutputUrl{Result: hashedLink}
-		rawBytes, err := easyjson.Marshal(outputUrl)
+		outputURL := &OutputURL{Result: hashedLink}
+		rawBytes, err := easyjson.Marshal(outputURL)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)
 			return
@@ -89,10 +89,10 @@ func CreateLinkPageJson(repository repo.Repository) http.HandlerFunc {
 	}
 }
 
-type InputUrl struct {
-	Url string `json:"url"`
+type InputURL struct {
+	URL string `json:"url"`
 }
 
-type OutputUrl struct {
+type OutputURL struct {
 	Result string `json:"result"`
 }

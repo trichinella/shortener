@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson7c25d2a6DecodeShortenerInternalAppHandler(in *jlexer.Lexer, out *OutputUrl) {
+func easyjson7c25d2a6DecodeShortenerInternalAppHandler(in *jlexer.Lexer, out *OutputURL) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -52,7 +52,7 @@ func easyjson7c25d2a6DecodeShortenerInternalAppHandler(in *jlexer.Lexer, out *Ou
 		in.Consumed()
 	}
 }
-func easyjson7c25d2a6EncodeShortenerInternalAppHandler(out *jwriter.Writer, in OutputUrl) {
+func easyjson7c25d2a6EncodeShortenerInternalAppHandler(out *jwriter.Writer, in OutputURL) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -65,29 +65,29 @@ func easyjson7c25d2a6EncodeShortenerInternalAppHandler(out *jwriter.Writer, in O
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v OutputUrl) MarshalJSON() ([]byte, error) {
+func (v OutputURL) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson7c25d2a6EncodeShortenerInternalAppHandler(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v OutputUrl) MarshalEasyJSON(w *jwriter.Writer) {
+func (v OutputURL) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson7c25d2a6EncodeShortenerInternalAppHandler(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *OutputUrl) UnmarshalJSON(data []byte) error {
+func (v *OutputURL) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson7c25d2a6DecodeShortenerInternalAppHandler(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *OutputUrl) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *OutputURL) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson7c25d2a6DecodeShortenerInternalAppHandler(l, v)
 }
-func easyjson7c25d2a6DecodeShortenerInternalAppHandler1(in *jlexer.Lexer, out *InputUrl) {
+func easyjson7c25d2a6DecodeShortenerInternalAppHandler1(in *jlexer.Lexer, out *InputURL) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -107,7 +107,7 @@ func easyjson7c25d2a6DecodeShortenerInternalAppHandler1(in *jlexer.Lexer, out *I
 		}
 		switch key {
 		case "url":
-			out.Url = string(in.String())
+			out.URL = string(in.String())
 		default:
 			in.AddError(&jlexer.LexerError{
 				Offset: in.GetPos(),
@@ -122,38 +122,38 @@ func easyjson7c25d2a6DecodeShortenerInternalAppHandler1(in *jlexer.Lexer, out *I
 		in.Consumed()
 	}
 }
-func easyjson7c25d2a6EncodeShortenerInternalAppHandler1(out *jwriter.Writer, in InputUrl) {
+func easyjson7c25d2a6EncodeShortenerInternalAppHandler1(out *jwriter.Writer, in InputURL) {
 	out.RawByte('{')
 	first := true
 	_ = first
 	{
 		const prefix string = ",\"url\":"
 		out.RawString(prefix[1:])
-		out.String(string(in.Url))
+		out.String(string(in.URL))
 	}
 	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v InputUrl) MarshalJSON() ([]byte, error) {
+func (v InputURL) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson7c25d2a6EncodeShortenerInternalAppHandler1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v InputUrl) MarshalEasyJSON(w *jwriter.Writer) {
+func (v InputURL) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson7c25d2a6EncodeShortenerInternalAppHandler1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *InputUrl) UnmarshalJSON(data []byte) error {
+func (v *InputURL) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson7c25d2a6DecodeShortenerInternalAppHandler1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *InputUrl) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *InputURL) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson7c25d2a6DecodeShortenerInternalAppHandler1(l, v)
 }

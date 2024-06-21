@@ -99,7 +99,7 @@ func TestCreateLinkPage(t *testing.T) {
 	}
 }
 
-func TestCreateLinkPageJson(t *testing.T) {
+func TestCreateLinkPageJSON(t *testing.T) {
 	type want struct {
 		code        int
 		response    string
@@ -168,7 +168,7 @@ func TestCreateLinkPageJson(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, tt.target, strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
 			s := repo.CreateLocalRepository(config.NewConfig())
-			CreateLinkPageJson(s)(w, req)
+			CreateLinkPageJSON(s)(w, req)
 			res := w.Result()
 
 			defer func() {
