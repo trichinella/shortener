@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"github.com/mailru/easyjson"
-	"io"
 	"net/http"
 	"shortener/internal/app/repo"
 )
@@ -11,7 +10,7 @@ import (
 // CreateLinkPage Страница создания ссылки
 func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
+		body, err := GetBody(r)
 		if err != nil {
 			panic(err)
 		}
@@ -21,13 +20,12 @@ func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 			panic(err)
 		}
 
-		if len(body) == 0 {
+		if len(string(body)) == 0 {
 			BadRequest(fmt.Errorf("body is empty"), http.StatusBadRequest)(w, r)
 			return
 		}
 
-		link := string(body)
-		hashedLink := repository.CreateShortLink(link)
+		hashedLink := repository.CreateShortLink(string(body))
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
@@ -43,7 +41,7 @@ func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 // пришел к выводу, что не рентабельно
 func CreateLinkPageJSON(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
+		body, err := GetBody(r)
 		if err != nil {
 			panic(err)
 		}

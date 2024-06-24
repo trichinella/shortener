@@ -19,8 +19,8 @@ type CustomServer struct {
 func (s *CustomServer) Prepare() {
 	localRepo := repo.CreateLocalRepository(s.Config)
 	s.Router = chi.NewRouter()
-	s.Router.Use(middleware.LogMiddleware(s.Logger.Sugar()))
 	s.Router.Use(middleware.Compress(s.Logger.Sugar()))
+	s.Router.Use(middleware.LogMiddleware(s.Logger.Sugar()))
 	fillHandler(s.Router, localRepo)
 }
 
