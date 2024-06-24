@@ -2,24 +2,26 @@ package handler
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 )
 
 func GetBody(r *http.Request) ([]byte, error) {
-	fmt.Println(`!strings.Contains(r.Header.Get("Content-Encoding"), "gzip")`, !strings.Contains(r.Header.Get("Content-Encoding"), "gzip"))
-	if !strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
-		return GetUnCompressedBody(r)
+	if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+		return GetCompressedBody(r)
 	}
 
-	return GetCompressedBody(r)
+	return GetUnCompressedBody(r)
 }
 
 func GetCompressedBody(r *http.Request) ([]byte, error) {
 	gz, err := gzip.NewReader(r.Body)
 	if err != nil {
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			return []byte{}, nil
+		}
+
 		return nil, err
 	}
 
