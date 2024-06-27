@@ -29,7 +29,7 @@ func (config *MainConfig) UpdateByEnv() {
 	}
 
 	envFileStoragePath := os.Getenv("FILE_STORAGE_PATH")
-	if envServerAddr != "" {
+	if envFileStoragePath != "" {
 		config.FileStoragePath = envFileStoragePath
 	}
 }
