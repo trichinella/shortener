@@ -17,11 +17,11 @@ type CustomServer struct {
 }
 
 func (s *CustomServer) Prepare() {
-	localRepo := repo.CreateLocalRepository(s.Config)
+	mainRepo := repo.GetRepo(s.Config)
 	s.Router = chi.NewRouter()
 	s.Router.Use(middleware.Compress(s.Logger.Sugar()))
 	s.Router.Use(middleware.LogMiddleware(s.Logger.Sugar()))
-	fillHandler(s.Router, localRepo)
+	fillHandler(s.Router, mainRepo, s.Config)
 }
 
 func (s *CustomServer) Start() {
@@ -32,10 +32,10 @@ func (s *CustomServer) Start() {
 	}
 }
 
-func fillHandler(router chi.Router, repo repo.Repository) {
-	router.Get(`/{hash}`, handler.GetLinkPage(repo))
-	router.Post(`/api/shorten`, handler.CreateLinkPageJSON(repo))
-	router.Post(`/`, handler.CreateLinkPage(repo))
+func fillHandler(router chi.Router, repo repo.Repository, cfg *config.MainConfig) {
+	router.Get(`/{shortUrl}`, handler.GetLinkPage(repo, cfg))
+	router.Post(`/api/shorten`, handler.CreateLinkPageJSON(repo, cfg))
+	router.Post(`/`, handler.CreateLinkPage(repo, cfg))
 }
 
 func CreateServer(config *config.MainConfig, logger *zap.Logger) CustomServer {

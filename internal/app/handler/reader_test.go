@@ -8,17 +8,17 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"shortener/internal/app/config"
+	"shortener/internal/app/entity"
 	"shortener/internal/app/repo"
-	"strings"
 	"testing"
 )
 
 func TestGetLinkPage(t *testing.T) {
-	s := repo.CreateLocalRepository(config.NewConfig())
+	cfg := config.NewConfig()
+	s := repo.CreateMemoryRepository(cfg)
 	router := chi.NewRouter()
-	router.Get(`/{hash}`, GetLinkPage(s))
+	router.Get(`/{shortUrl}`, GetLinkPage(s, cfg))
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
@@ -28,45 +28,50 @@ func TestGetLinkPage(t *testing.T) {
 		response string
 	}
 	tests := []struct {
-		name string
-		hash string
-		want want
+		name        string
+		contraction *entity.Contraction
+		hash        string
+		want        want
 	}{
 		{
-			name: "Base",
-			hash: strings.Split(s.CreateShortLink("http://ya.ru"), "/")[3],
+			name:        "Base",
+			contraction: s.CreateContraction("http://ya.ru"),
 			want: want{
 				code: http.StatusTemporaryRedirect,
 				url:  "http://ya.ru",
 			},
 		},
 		{
-			name: "Error",
-			hash: "itsnothabr",
+			name:        "Error",
+			hash:        "itsnothabr",
+			contraction: s.CreateContraction("http://ya.ru"),
 			want: want{
 				code:     http.StatusBadRequest,
 				url:      "http://habr.ru",
-				response: fmt.Errorf("unknown key\n").Error(),
+				response: fmt.Errorf("unknown short url\n").Error(),
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req, err := http.NewRequest(http.MethodGet, string(ts.URL)+"/"+test.hash, nil)
+			shortUrl := test.contraction.ShortUrl
+			if test.hash != "" {
+				shortUrl = test.hash
+			}
+
+			req, err := http.NewRequest(http.MethodGet, string(ts.URL)+"/"+shortUrl, nil)
 			req.Header.Set("Content-Type", "text/plain")
 
 			require.NoError(t, err)
 
 			client := ts.Client()
-			var redirects []Redirect
+			hasRedirect := false
 			client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-				redirects = append(redirects, Redirect{
-					URL:  req.URL,
-					Code: req.Response.StatusCode,
-				})
-
-				return nil
+				hasRedirect = true
+				assert.Equal(t, test.want.url, req.URL.String())
+				assert.Equal(t, test.want.code, req.Response.StatusCode)
+				return http.ErrUseLastResponse
 			}
 
 			resp, err := client.Do(req)
@@ -83,24 +88,16 @@ func TestGetLinkPage(t *testing.T) {
 			}()
 			respBodyString := string(respBody)
 
-			if resp.StatusCode > 299 {
+			if resp.StatusCode > 399 {
 				// получаем и проверяем тело запроса
 				assert.Equal(t, test.want.code, resp.StatusCode)
 				assert.Equal(t, test.want.response, respBodyString)
 				return
 			}
 
-			if len(redirects) == 0 {
+			if !hasRedirect {
 				t.Fatalf("There is not redirect")
 			}
-
-			assert.Equal(t, test.want.url, redirects[0].URL.String())
-			assert.Equal(t, test.want.code, redirects[0].Code)
 		})
 	}
-}
-
-type Redirect struct {
-	URL  *url.URL
-	Code int
 }

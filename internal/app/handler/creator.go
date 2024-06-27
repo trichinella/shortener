@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"github.com/mailru/easyjson"
 	"net/http"
+	"shortener/internal/app/config"
+	"shortener/internal/app/human"
 	"shortener/internal/app/repo"
 )
 
 // CreateLinkPage Страница создания ссылки
-func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
+func CreateLinkPage(repository repo.Repository, cfg *config.MainConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := GetBody(r)
 		if err != nil {
@@ -25,11 +27,11 @@ func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 			return
 		}
 
-		hashedLink := repository.CreateShortLink(string(body))
+		contraction := repository.CreateContraction(string(body))
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
-		_, err = w.Write([]byte(hashedLink))
+		_, err = w.Write([]byte(human.GetFullShortUrl(cfg, contraction)))
 
 		if err != nil {
 			panic(err)
@@ -39,7 +41,7 @@ func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 
 // CreateLinkPageJSON Похожа на CreateLinkPage, но отличается тем, что есть JSON. Думал об объединении методов
 // пришел к выводу, что не рентабельно
-func CreateLinkPageJSON(repository repo.Repository) http.HandlerFunc {
+func CreateLinkPageJSON(repository repo.Repository, cfg *config.MainConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := GetBody(r)
 		if err != nil {
@@ -68,9 +70,9 @@ func CreateLinkPageJSON(repository repo.Repository) http.HandlerFunc {
 			return
 		}
 
-		hashedLink := repository.CreateShortLink(inputURL.URL)
+		contraction := repository.CreateContraction(inputURL.URL)
 
-		outputURL := &OutputURL{Result: hashedLink}
+		outputURL := &OutputURL{Result: human.GetFullShortUrl(cfg, contraction)}
 		rawBytes, err := easyjson.Marshal(outputURL)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)

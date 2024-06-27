@@ -1,51 +1,21 @@
 package repo
 
 import (
-	"fmt"
 	"shortener/internal/app/config"
-	"shortener/internal/app/random"
+	"shortener/internal/app/entity"
 )
 
-func CreateLocalRepository(config *config.MainConfig) LocalRepository {
-	return LocalRepository{
-		Config:    config,
-		UserLinks: map[string]string{},
-	}
-}
-
-// Repository Задел на будущее (моки)
+// Repository Репозиторий с данными
 type Repository interface {
-	GetUserLink(hash string) (string, error)
-	CreateShortLink(userLink string) string
+	GetContraction(shortUrl string) (*entity.Contraction, error)
+	CreateContraction(originalUrl string) *entity.Contraction
+	HasContraction(shortUrl string) bool
 }
 
-// LocalRepository Основная структура
-type LocalRepository struct {
-	UserLinks map[string]string
-	Config    *config.MainConfig
-}
-
-// GetUserLink Получить ссылку на основе URL
-func (s LocalRepository) GetUserLink(hash string) (string, error) {
-	val, ok := s.UserLinks[hash]
-	if !ok {
-		return val, fmt.Errorf("unknown key")
+func GetRepo(cfg *config.MainConfig) Repository {
+	//return CreateMemoryRepository(cfg)
+	if "" == cfg.FileStoragePath {
+		return CreateMemoryRepository(cfg)
 	}
-
-	return val, nil
-}
-
-// CreateShortLink Создать ссылку - пока будем хранить в мапе
-func (s LocalRepository) CreateShortLink(userLink string) string {
-	var hash string
-	for {
-		hash = random.GenerateRandomString(7)
-		if _, ok := s.UserLinks[hash]; !ok {
-			break
-		}
-	}
-
-	s.UserLinks[hash] = userLink
-
-	return s.Config.DisplayLink + "/" + hash
+	return CreateFileRepository(cfg)
 }

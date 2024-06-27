@@ -16,9 +16,10 @@ import (
 )
 
 func TestCreateLinkPage(t *testing.T) {
-	s := repo.CreateLocalRepository(config.NewConfig())
+	cfg := config.NewConfig()
+	s := repo.CreateMemoryRepository(cfg)
 	router := chi.NewRouter()
-	router.Post(`/`, CreateLinkPage(s))
+	router.Post(`/`, CreateLinkPage(s, cfg))
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
@@ -167,8 +168,9 @@ func TestCreateLinkPageJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, tt.target, strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			s := repo.CreateLocalRepository(config.NewConfig())
-			CreateLinkPageJSON(s)(w, req)
+			cfg := config.NewConfig()
+			s := repo.CreateMemoryRepository(cfg)
+			CreateLinkPageJSON(s, cfg)(w, req)
 			res := w.Result()
 
 			defer func() {
