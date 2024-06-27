@@ -33,7 +33,7 @@ func (s *CustomServer) Start() {
 }
 
 func fillHandler(router chi.Router, repo repo.Repository, cfg *config.MainConfig) {
-	router.Get(`/{shortUrl}`, handler.GetLinkPage(repo, cfg))
+	router.Get(`/{shortURL}`, handler.GetLinkPage(repo))
 	router.Post(`/api/shorten`, handler.CreateLinkPageJSON(repo, cfg))
 	router.Post(`/`, handler.CreateLinkPage(repo, cfg))
 }

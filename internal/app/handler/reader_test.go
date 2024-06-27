@@ -18,7 +18,7 @@ func TestGetLinkPage(t *testing.T) {
 	cfg := config.NewConfig()
 	s := repo.CreateMemoryRepository(cfg)
 	router := chi.NewRouter()
-	router.Get(`/{shortUrl}`, GetLinkPage(s, cfg))
+	router.Get(`/{shortURL}`, GetLinkPage(s))
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
@@ -55,12 +55,12 @@ func TestGetLinkPage(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			shortUrl := test.contraction.ShortUrl
+			shortURL := test.contraction.ShortURL
 			if test.hash != "" {
-				shortUrl = test.hash
+				shortURL = test.hash
 			}
 
-			req, err := http.NewRequest(http.MethodGet, string(ts.URL)+"/"+shortUrl, nil)
+			req, err := http.NewRequest(http.MethodGet, string(ts.URL)+"/"+shortURL, nil)
 			req.Header.Set("Content-Type", "text/plain")
 
 			require.NoError(t, err)

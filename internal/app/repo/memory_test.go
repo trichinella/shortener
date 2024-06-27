@@ -52,8 +52,8 @@ func TestMemoryRepository_CreateContraction(t *testing.T) {
 
 			testContraction := r.CreateContraction(tt.link)
 
-			if !strings.HasPrefix(human.GetFullShortUrl(cfg, testContraction), tt.want) {
-				t.Errorf("Contraction has incorrect prefix, got: %v,  want %v", human.GetFullShortUrl(cfg, testContraction), tt.want)
+			if !strings.HasPrefix(human.GetFullShortURL(cfg, testContraction), tt.want) {
+				t.Errorf("Contraction has incorrect prefix, got: %v,  want %v", human.GetFullShortURL(cfg, testContraction), tt.want)
 			}
 		})
 	}
@@ -77,12 +77,12 @@ func TestMemoryRepository_GetContraction(t *testing.T) {
 			fields: fields{
 				Contractions: []*entity.Contraction{
 					{
-						ShortUrl:    "yaru12345",
-						OriginalUrl: "http://ya.ru",
+						ShortURL:    "yaru12345",
+						OriginalURL: "http://ya.ru",
 					},
 					{
-						ShortUrl:    "qwerty",
-						OriginalUrl: "http://qwerty.ru",
+						ShortURL:    "qwerty",
+						OriginalURL: "http://qwerty.ru",
 					},
 				},
 			},
@@ -95,12 +95,12 @@ func TestMemoryRepository_GetContraction(t *testing.T) {
 			fields: fields{
 				Contractions: []*entity.Contraction{
 					{
-						ShortUrl:    "yaru12345",
-						OriginalUrl: "http://ya.ru",
+						ShortURL:    "yaru12345",
+						OriginalURL: "http://ya.ru",
 					},
 					{
-						ShortUrl:    "qwerty",
-						OriginalUrl: "http://qwerty.ru",
+						ShortURL:    "qwerty",
+						OriginalURL: "http://qwerty.ru",
 					},
 				},
 			},
@@ -113,12 +113,12 @@ func TestMemoryRepository_GetContraction(t *testing.T) {
 			fields: fields{
 				Contractions: []*entity.Contraction{
 					{
-						ShortUrl:    "yaru12345",
-						OriginalUrl: "http://ya.ru",
+						ShortURL:    "yaru12345",
+						OriginalURL: "http://ya.ru",
 					},
 					{
-						ShortUrl:    "qwerty",
-						OriginalUrl: "http://qwerty.ru",
+						ShortURL:    "qwerty",
+						OriginalURL: "http://qwerty.ru",
 					},
 				},
 			},
@@ -150,8 +150,8 @@ func TestMemoryRepository_GetContraction(t *testing.T) {
 				return
 			}
 
-			if err == nil && testContraction.OriginalUrl != tt.want {
-				t.Errorf("GetContraction() got = %v, want %v", testContraction.OriginalUrl, tt.want)
+			if err == nil && testContraction.OriginalURL != tt.want {
+				t.Errorf("GetContraction() got = %v, want %v", testContraction.OriginalURL, tt.want)
 			}
 		})
 	}
@@ -174,12 +174,12 @@ func TestMemoryRepository_HasContraction(t *testing.T) {
 			fields: fields{
 				Contractions: []*entity.Contraction{
 					{
-						ShortUrl:    "yaru12345",
-						OriginalUrl: "http://ya.ru",
+						ShortURL:    "yaru12345",
+						OriginalURL: "http://ya.ru",
 					},
 					{
-						ShortUrl:    "qwerty",
-						OriginalUrl: "http://qwerty.ru",
+						ShortURL:    "qwerty",
+						OriginalURL: "http://qwerty.ru",
 					},
 				},
 			},
@@ -191,12 +191,12 @@ func TestMemoryRepository_HasContraction(t *testing.T) {
 			fields: fields{
 				Contractions: []*entity.Contraction{
 					{
-						ShortUrl:    "yaru12345",
-						OriginalUrl: "http://ya.ru",
+						ShortURL:    "yaru12345",
+						OriginalURL: "http://ya.ru",
 					},
 					{
-						ShortUrl:    "qwerty",
-						OriginalUrl: "http://qwerty.ru",
+						ShortURL:    "qwerty",
+						OriginalURL: "http://qwerty.ru",
 					},
 				},
 			},

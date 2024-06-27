@@ -3,21 +3,19 @@ package handler
 import (
 	"github.com/go-chi/chi/v5"
 	"net/http"
-	"shortener/internal/app/config"
 	"shortener/internal/app/repo"
 )
 
 // GetLinkPage Страница получения ссылки
-func GetLinkPage(repository repo.Repository, cfg *config.MainConfig) http.HandlerFunc {
+func GetLinkPage(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		shortUrl := chi.URLParam(r, "shortUrl")
-		contraction, err := repository.GetContraction(shortUrl)
+		contraction, err := repository.GetContraction(chi.URLParam(r, "shortURL"))
 
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)
 			return
 		}
 
-		http.Redirect(w, r, contraction.OriginalUrl, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, contraction.OriginalURL, http.StatusTemporaryRedirect)
 	}
 }

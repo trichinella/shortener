@@ -31,7 +31,7 @@ func CreateLinkPage(repository repo.Repository, cfg *config.MainConfig) http.Han
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
-		_, err = w.Write([]byte(human.GetFullShortUrl(cfg, contraction)))
+		_, err = w.Write([]byte(human.GetFullShortURL(cfg, contraction)))
 
 		if err != nil {
 			panic(err)
@@ -72,7 +72,7 @@ func CreateLinkPageJSON(repository repo.Repository, cfg *config.MainConfig) http
 
 		contraction := repository.CreateContraction(inputURL.URL)
 
-		outputURL := &OutputURL{Result: human.GetFullShortUrl(cfg, contraction)}
+		outputURL := &OutputURL{Result: human.GetFullShortURL(cfg, contraction)}
 		rawBytes, err := easyjson.Marshal(outputURL)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)

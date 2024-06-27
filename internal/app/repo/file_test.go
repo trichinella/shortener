@@ -91,7 +91,7 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 		Config       *config.MainConfig
 	}
 	type args struct {
-		originalUrl string
+		OriginalURL string
 	}
 	tests := []struct {
 		name      string
@@ -109,12 +109,12 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 				},
 			},
 			args: struct {
-				originalUrl string
+				OriginalURL string
 			}{
-				originalUrl: "http://ya.ru",
+				OriginalURL: "http://ya.ru",
 			},
 			want: &entity.Contraction{
-				OriginalUrl: "http://ya.ru",
+				OriginalURL: "http://ya.ru",
 			},
 			wantCount: 1,
 		},
@@ -127,12 +127,12 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 				},
 			},
 			args: struct {
-				originalUrl string
+				OriginalURL string
 			}{
-				originalUrl: "http://habr.ru",
+				OriginalURL: "http://habr.ru",
 			},
 			want: &entity.Contraction{
-				OriginalUrl: "http://habr.ru",
+				OriginalURL: "http://habr.ru",
 			},
 			wantCount: 3,
 		},
@@ -146,7 +146,7 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 
 			var gotContraction *entity.Contraction
 			for i := 0; i < tt.wantCount; i++ {
-				gotContraction = r.CreateContraction(tt.args.originalUrl)
+				gotContraction = r.CreateContraction(tt.args.OriginalURL)
 			}
 
 			defer func(name string) {
@@ -162,7 +162,7 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 			cnt, _ := LineCounter(file)
 
 			assert.Equal(t, tt.wantCount, cnt)
-			assert.Equal(t, tt.want.OriginalUrl, gotContraction.OriginalUrl, "Original URL and got URL must be equal")
+			assert.Equal(t, tt.want.OriginalURL, gotContraction.OriginalURL, "Original URL and got URL must be equal")
 		})
 	}
 }

@@ -31,9 +31,9 @@ func CreateFileRepository(config *config.MainConfig) *FileRepository {
 }
 
 // GetContraction Получить ссылку на основе URL
-func (r *FileRepository) GetContraction(shortUrl string) (*entity.Contraction, error) {
+func (r *FileRepository) GetContraction(shortURL string) (*entity.Contraction, error) {
 	for _, contraction := range r.Contractions {
-		if contraction.ShortUrl == shortUrl {
+		if contraction.ShortURL == shortURL {
 			return contraction, nil
 		}
 	}
@@ -41,14 +41,14 @@ func (r *FileRepository) GetContraction(shortUrl string) (*entity.Contraction, e
 	return nil, fmt.Errorf("unknown short url")
 }
 
-func (r *FileRepository) HasContraction(shortUrl string) bool {
-	_, err := r.GetContraction(shortUrl)
+func (r *FileRepository) HasContraction(shortURL string) bool {
+	_, err := r.GetContraction(shortURL)
 
 	return err == nil
 }
 
 // CreateContraction Создать ссылку - пока будем хранить в мапе
-func (r *FileRepository) CreateContraction(originalUrl string) *entity.Contraction {
+func (r *FileRepository) CreateContraction(originalURL string) *entity.Contraction {
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
@@ -58,8 +58,8 @@ func (r *FileRepository) CreateContraction(originalUrl string) *entity.Contracti
 	}
 
 	contraction := &entity.Contraction{
-		OriginalUrl: originalUrl,
-		ShortUrl:    hash,
+		OriginalURL: originalURL,
+		ShortURL:    hash,
 	}
 
 	data, err := json.Marshal(contraction)

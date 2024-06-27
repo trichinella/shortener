@@ -21,9 +21,9 @@ type MemoryRepository struct {
 }
 
 // GetContraction Получить сокращение на основе краткого URL
-func (r *MemoryRepository) GetContraction(shortUrl string) (*entity.Contraction, error) {
+func (r *MemoryRepository) GetContraction(shortURL string) (*entity.Contraction, error) {
 	for _, contraction := range r.Contractions {
-		if contraction.ShortUrl == shortUrl {
+		if contraction.ShortURL == shortURL {
 			return contraction, nil
 		}
 	}
@@ -31,14 +31,14 @@ func (r *MemoryRepository) GetContraction(shortUrl string) (*entity.Contraction,
 	return nil, fmt.Errorf("unknown short url")
 }
 
-func (r *MemoryRepository) HasContraction(shortUrl string) bool {
-	_, err := r.GetContraction(shortUrl)
+func (r *MemoryRepository) HasContraction(shortURL string) bool {
+	_, err := r.GetContraction(shortURL)
 
 	return err == nil
 }
 
 // CreateContraction Создать сокращение
-func (r *MemoryRepository) CreateContraction(originalUrl string) *entity.Contraction {
+func (r *MemoryRepository) CreateContraction(originalURL string) *entity.Contraction {
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
@@ -48,8 +48,8 @@ func (r *MemoryRepository) CreateContraction(originalUrl string) *entity.Contrac
 	}
 
 	contraction := &entity.Contraction{
-		OriginalUrl: originalUrl,
-		ShortUrl:    hash,
+		OriginalURL: originalURL,
+		ShortURL:    hash,
 	}
 	r.Contractions = append(r.Contractions, contraction)
 

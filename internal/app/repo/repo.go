@@ -7,15 +7,15 @@ import (
 
 // Repository Репозиторий с данными
 type Repository interface {
-	GetContraction(shortUrl string) (*entity.Contraction, error)
-	CreateContraction(originalUrl string) *entity.Contraction
-	HasContraction(shortUrl string) bool
+	GetContraction(shortURL string) (*entity.Contraction, error)
+	CreateContraction(originalURL string) *entity.Contraction
+	HasContraction(shortURL string) bool
 }
 
 func GetRepo(cfg *config.MainConfig) Repository {
-	//return CreateMemoryRepository(cfg)
-	if "" == cfg.FileStoragePath {
+	if cfg.FileStoragePath == "" {
 		return CreateMemoryRepository(cfg)
 	}
+
 	return CreateFileRepository(cfg)
 }
