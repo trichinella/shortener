@@ -70,7 +70,6 @@ func (r *FileRepository) CreateContraction(originalURL string) *entity.Contracti
 	data = append(data, []byte("\n")...)
 
 	file, err := os.OpenFile(r.Config.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-	_, err = file.Write(data)
 	if err != nil {
 		panic(err)
 	}
@@ -81,6 +80,11 @@ func (r *FileRepository) CreateContraction(originalURL string) *entity.Contracti
 			panic(err)
 		}
 	}()
+
+	_, err = file.Write(data)
+	if err != nil {
+		panic(err)
+	}
 
 	r.Contractions = append(r.Contractions, contraction)
 
