@@ -71,15 +71,16 @@ func (r *FileRepository) CreateContraction(originalURL string) *entity.Contracti
 
 	file, err := os.OpenFile(r.Config.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	_, err = file.Write(data)
+	if err != nil {
+		panic(err)
+	}
+
 	defer func() {
 		err := file.Close()
 		if err != nil {
 			panic(err)
 		}
 	}()
-	if err != nil {
-		panic(err)
-	}
 
 	r.Contractions = append(r.Contractions, contraction)
 
