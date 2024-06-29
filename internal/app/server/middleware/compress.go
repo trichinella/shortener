@@ -28,7 +28,13 @@ func Compress(sugar *zap.SugaredLogger) func(next http.Handler) http.Handler {
 				return
 			}
 
-			gz, err := getCompressor(w, sugar)
+			gz, err := getCompressor(w)
+			defer func() {
+				if err = gz.Close(); err != nil {
+					sugar.Error(err)
+				}
+			}()
+
 			if err != nil {
 				sugar.Error(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -41,18 +47,12 @@ func Compress(sugar *zap.SugaredLogger) func(next http.Handler) http.Handler {
 	}
 }
 
-func getCompressor(w http.ResponseWriter, sugar *zap.SugaredLogger) (io.Writer, error) {
+func getCompressor(w http.ResponseWriter) (*gzip.Writer, error) {
 	gz, err := gzip.NewWriterLevel(w, gzip.DefaultCompression)
 
 	if err != nil {
 		return nil, err
 	}
-
-	defer func() {
-		if err := gz.Close(); err != nil {
-			sugar.Error(err)
-		}
-	}()
 
 	return gz, nil
 }
