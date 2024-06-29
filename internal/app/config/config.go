@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"os"
@@ -6,13 +6,15 @@ import (
 )
 
 type MainConfig struct {
-	DisplayLink string
-	ServerHost  string
+	DisplayLink     string
+	ServerHost      string
+	FileStoragePath string
 }
 
 func (config *MainConfig) UpdateByOptions(o Options) {
 	config.ServerHost = o.ServerHost
 	config.DisplayLink = strings.Trim(o.DisplayLink, "/")
+	config.FileStoragePath = o.FileStoragePath
 }
 
 func (config *MainConfig) UpdateByEnv() {
@@ -24,6 +26,11 @@ func (config *MainConfig) UpdateByEnv() {
 	envServerAddr := os.Getenv("SERVER_ADDRESS")
 	if envServerAddr != "" {
 		config.ServerHost = envServerAddr
+	}
+
+	envFileStoragePath := os.Getenv("FILE_STORAGE_PATH")
+	if envFileStoragePath != "" {
+		config.FileStoragePath = envFileStoragePath
 	}
 }
 
