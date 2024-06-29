@@ -14,9 +14,11 @@ func main() {
 	cfg.UpdateByOptions(config.BaseOptions)
 	cfg.UpdateByEnv()
 
-	consoleLogger := NewConsoleLogger()
+	logger := NewConsoleLogger()
+	defer func() {
+		_ = logger.Sync()
+	}()
 
-	srv := server.CreateServer(cfg, consoleLogger)
-	srv.Prepare()
-	srv.Start()
+	srv := server.CreateServer(cfg, logger)
+	srv.Run()
 }

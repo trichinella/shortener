@@ -2,22 +2,20 @@ package repo
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"io"
 	"os"
-	"os/user"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
 	"testing"
 )
 
 func TestFileRepository_init(t *testing.T) {
-	usr, _ := user.Current()
-	homeDir := usr.HomeDir
-
 	type fields struct {
-		Contractions []*entity.Contraction
-		Config       *config.MainConfig
+		Shortcuts map[string]entity.Shortcut
+		Config    *config.MainConfig
 	}
 	tests := []struct {
 		name        string
@@ -29,25 +27,25 @@ func TestFileRepository_init(t *testing.T) {
 		{
 			name: "Пример из 5 сокращений",
 			fields: fields{
-				Contractions: []*entity.Contraction{},
+				Shortcuts: map[string]entity.Shortcut{},
 				Config: &config.MainConfig{
-					FileStoragePath: homeDir + "/f.json",
+					FileStoragePath: os.TempDir() + "/f.json",
 				},
 			},
-			fileContent: `{"uuid":0,"short_url":"lvs3iWf","original_url":"https://practicum.yandex.ru/"}
-{"uuid":0,"short_url":"c7n4INA","original_url":"https://practicum.yandex.ru/"}
-{"uuid":0,"short_url":"Fxuyi8z","original_url":"https://practicum.yandex.ru/"}
-{"uuid":0,"short_url":"RuPCOGq","original_url":"https://practicum.yandex.ru/"}
-{"uuid":0,"short_url":"1GgQeMp","original_url":"http://ya.ru"}`,
+			fileContent: `{"uuid":"00000000-0000-0000-0000-000000000000","short_url":"lvs3iWf","original_url":"https://practicum.yandex.ru/"}
+{"uuid":"00000000-0000-0000-0000-000000000000","short_url":"c7n4INA","original_url":"https://practicum.yandex.ru/"}
+{"uuid":"00000000-0000-0000-0000-000000000000","short_url":"Fxuyi8z","original_url":"https://practicum.yandex.ru/"}
+{"uuid":"00000000-0000-0000-0000-000000000000","short_url":"RuPCOGq","original_url":"https://practicum.yandex.ru/"}
+{"uuid":"00000000-0000-0000-0000-000000000000","short_url":"1GgQeMp","original_url":"http://ya.ru"}`,
 			wantErr: false,
 			want:    5,
 		},
 		{
 			name: "Пример из 0 сокращений",
 			fields: fields{
-				Contractions: []*entity.Contraction{},
+				Shortcuts: map[string]entity.Shortcut{},
 				Config: &config.MainConfig{
-					FileStoragePath: homeDir + "/f1.json",
+					FileStoragePath: os.TempDir() + "/f1.json",
 				},
 			},
 			fileContent: ``,
@@ -69,26 +67,24 @@ func TestFileRepository_init(t *testing.T) {
 			}(tt.fields.Config.FileStoragePath)
 
 			s := &FileRepository{
-				Contractions: tt.fields.Contractions,
-				Config:       tt.fields.Config,
+				Shortcuts: tt.fields.Shortcuts,
+				Config:    tt.fields.Config,
 			}
 
 			if err := s.init(); (err != nil) != tt.wantErr {
 				t.Errorf("init() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			assert.Len(t, s.Contractions, tt.want)
+			assert.Len(t, s.Shortcuts, tt.want)
 		})
 	}
 }
 
-func TestFileRepository_CreateContraction(t *testing.T) {
-	usr, _ := user.Current()
-	homeDir := usr.HomeDir
-
+func TestFileRepository_CreateShortcut(t *testing.T) {
+	var err error
 	type fields struct {
-		Contractions []*entity.Contraction
-		Config       *config.MainConfig
+		Shortcuts map[string]entity.Shortcut
+		Config    *config.MainConfig
 	}
 	type args struct {
 		OriginalURL string
@@ -97,15 +93,15 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 		name      string
 		fields    fields
 		args      args
-		want      *entity.Contraction
+		want      *entity.Shortcut
 		wantCount int
 	}{
 		{
 			name: "Пример из 1 сокращения",
 			fields: fields{
-				Contractions: []*entity.Contraction{},
+				Shortcuts: map[string]entity.Shortcut{},
 				Config: &config.MainConfig{
-					FileStoragePath: homeDir + "/q.json",
+					FileStoragePath: os.TempDir() + "/q.json",
 				},
 			},
 			args: struct {
@@ -113,7 +109,7 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 			}{
 				OriginalURL: "http://ya.ru",
 			},
-			want: &entity.Contraction{
+			want: &entity.Shortcut{
 				OriginalURL: "http://ya.ru",
 			},
 			wantCount: 1,
@@ -121,9 +117,9 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 		{
 			name: "Пример из 3 сокращения",
 			fields: fields{
-				Contractions: []*entity.Contraction{},
+				Shortcuts: map[string]entity.Shortcut{},
 				Config: &config.MainConfig{
-					FileStoragePath: homeDir + "/q1.json",
+					FileStoragePath: os.TempDir() + "/q1.json",
 				},
 			},
 			args: struct {
@@ -131,7 +127,7 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 			}{
 				OriginalURL: "http://habr.ru",
 			},
-			want: &entity.Contraction{
+			want: &entity.Shortcut{
 				OriginalURL: "http://habr.ru",
 			},
 			wantCount: 3,
@@ -140,29 +136,30 @@ func TestFileRepository_CreateContraction(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &FileRepository{
-				Contractions: tt.fields.Contractions,
-				Config:       tt.fields.Config,
+				Shortcuts: tt.fields.Shortcuts,
+				Config:    tt.fields.Config,
 			}
 
-			var gotContraction *entity.Contraction
+			var gotShortcut *entity.Shortcut
 			for i := 0; i < tt.wantCount; i++ {
-				gotContraction = r.CreateContraction(tt.args.OriginalURL)
+				gotShortcut, err = r.CreateShortcut(tt.args.OriginalURL)
+				require.NoError(t, err)
 			}
 
 			defer func(name string) {
 				err := os.Remove(name)
 				if err != nil {
-					t.Fatalf("Incorrect test: %v", err)
+					t.Error(fmt.Errorf("incorrect test: %w", err))
 				}
 			}(tt.fields.Config.FileStoragePath)
 			file, err := os.OpenFile(tt.fields.Config.FileStoragePath, os.O_RDONLY, 0666)
 			if err != nil {
-				t.Fatalf("Incorrect test: %v", err)
+				t.Error(fmt.Errorf("incorrect test: %w", err))
 			}
 			cnt, _ := LineCounter(file)
 
 			assert.Equal(t, tt.wantCount, cnt)
-			assert.Equal(t, tt.want.OriginalURL, gotContraction.OriginalURL, "Original URL and got URL must be equal")
+			assert.Equal(t, tt.want.OriginalURL, gotShortcut.OriginalURL, "Original URL and got URL must be equal")
 		})
 	}
 }

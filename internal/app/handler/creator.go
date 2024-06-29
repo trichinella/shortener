@@ -12,54 +12,36 @@ import (
 // CreateLinkPage Страница создания ссылки
 func CreateLinkPage(repository repo.Repository, cfg *config.MainConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := GetBody(r)
-		if err != nil {
-			panic(err)
-		}
-
-		err = r.Body.Close()
-		if err != nil {
-			panic(err)
-		}
-
-		if len(string(body)) == 0 {
-			BadRequest(fmt.Errorf("body is empty"), http.StatusBadRequest)(w, r)
+		body, ok := handleCreateLinkBody(w, r)
+		if !ok {
 			return
 		}
 
-		contraction := repository.CreateContraction(string(body))
+		shortcut, err := repository.CreateShortcut(string(body))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
-		_, err = w.Write([]byte(human.GetFullShortURL(cfg, contraction)))
+		_, err = w.Write([]byte(human.GetFullShortURL(cfg, shortcut)))
 
 		if err != nil {
-			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }
 
-// CreateLinkPageJSON Похожа на CreateLinkPage, но отличается тем, что есть JSON. Думал об объединении методов
-// пришел к выводу, что не рентабельно
+// CreateLinkPageJSON Страница создания ссылки в формате JSON
 func CreateLinkPageJSON(repository repo.Repository, cfg *config.MainConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := GetBody(r)
-		if err != nil {
-			panic(err)
-		}
-
-		err = r.Body.Close()
-		if err != nil {
-			panic(err)
-		}
-
-		if len(body) == 0 {
-			BadRequest(fmt.Errorf("body is empty"), http.StatusBadRequest)(w, r)
+		body, ok := handleCreateLinkBody(w, r)
+		if !ok {
 			return
 		}
 
 		inputURL := &InputURL{}
-		err = easyjson.Unmarshal(body, inputURL)
+		err := easyjson.Unmarshal(body, inputURL)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)
 			return
@@ -70,9 +52,13 @@ func CreateLinkPageJSON(repository repo.Repository, cfg *config.MainConfig) http
 			return
 		}
 
-		contraction := repository.CreateContraction(inputURL.URL)
+		shortcut, err := repository.CreateShortcut(inputURL.URL)
+		if err != nil {
+			BadRequest(err, http.StatusBadRequest)(w, r)
+			return
+		}
 
-		outputURL := &OutputURL{Result: human.GetFullShortURL(cfg, contraction)}
+		outputURL := &OutputURL{Result: human.GetFullShortURL(cfg, shortcut)}
 		rawBytes, err := easyjson.Marshal(outputURL)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)
@@ -84,9 +70,24 @@ func CreateLinkPageJSON(repository repo.Repository, cfg *config.MainConfig) http
 		_, err = w.Write(rawBytes)
 
 		if err != nil {
-			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+func handleCreateLinkBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
+	body, err := GetBody(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, false
+	}
+
+	if len(body) == 0 {
+		BadRequest(fmt.Errorf("body is empty"), http.StatusBadRequest)(w, r)
+		return nil, false
+	}
+
+	return body, true
 }
 
 type InputURL struct {

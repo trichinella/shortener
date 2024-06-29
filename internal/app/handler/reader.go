@@ -9,13 +9,13 @@ import (
 // GetLinkPage Страница получения ссылки
 func GetLinkPage(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		contraction, err := repository.GetContraction(chi.URLParam(r, "shortURL"))
+		shortcut, err := repository.GetShortcut(chi.URLParam(r, "shortURL"))
 
 		if err != nil {
-			BadRequest(err, http.StatusBadRequest)(w, r)
+			BadRequest(err, http.StatusNotFound)(w, r)
 			return
 		}
 
-		http.Redirect(w, r, contraction.OriginalURL, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, shortcut.OriginalURL, http.StatusTemporaryRedirect)
 	}
 }

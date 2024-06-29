@@ -13,5 +13,6 @@ var BaseOptions = Options{}
 func init() {
 	flag.StringVar(&BaseOptions.ServerHost, "a", "localhost:8080", "Server host")
 	flag.StringVar(&BaseOptions.DisplayLink, "b", "http://localhost:8080", "Link displays for user")
-	flag.StringVar(&BaseOptions.FileStoragePath, "f", "/tmp/short-url-db.json", "File path for storage")
+	//flag.StringVar(&BaseOptions.FileStoragePath, "f", "/tmp/short-url-db.json", "File path for storage")
+	flag.StringVar(&BaseOptions.FileStoragePath, "f", "/home/alexey/dev/shortener/short-url-db.json", "File path for storage")
 }

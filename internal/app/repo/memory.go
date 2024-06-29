@@ -9,49 +9,49 @@ import (
 
 func CreateMemoryRepository(config *config.MainConfig) *MemoryRepository {
 	return &MemoryRepository{
-		Contractions: []*entity.Contraction{},
-		Config:       config,
+		Shortcuts: map[string]entity.Shortcut{},
+		Config:    config,
 	}
 }
 
 // MemoryRepository Основная структура
 type MemoryRepository struct {
-	Contractions []*entity.Contraction
-	Config       *config.MainConfig
+	Shortcuts map[string]entity.Shortcut
+	Config    *config.MainConfig
 }
 
-// GetContraction Получить сокращение на основе краткого URL
-func (r *MemoryRepository) GetContraction(shortURL string) (*entity.Contraction, error) {
-	for _, contraction := range r.Contractions {
-		if contraction.ShortURL == shortURL {
-			return contraction, nil
-		}
+// GetShortcut Получить сокращение на основе краткого URL
+func (r *MemoryRepository) GetShortcut(shortURL string) (*entity.Shortcut, error) {
+	shortcut, ok := r.Shortcuts[shortURL]
+
+	if ok {
+		return &shortcut, nil
 	}
 
 	return nil, fmt.Errorf("unknown short url")
 }
 
-func (r *MemoryRepository) HasContraction(shortURL string) bool {
-	_, err := r.GetContraction(shortURL)
+func (r *MemoryRepository) HasShortcut(shortURL string) bool {
+	_, err := r.GetShortcut(shortURL)
 
 	return err == nil
 }
 
-// CreateContraction Создать сокращение
-func (r *MemoryRepository) CreateContraction(originalURL string) *entity.Contraction {
+// CreateShortcut Создать сокращение
+func (r *MemoryRepository) CreateShortcut(originalURL string) (*entity.Shortcut, error) {
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
-		if !r.HasContraction(hash) {
+		if !r.HasShortcut(hash) {
 			break
 		}
 	}
 
-	contraction := &entity.Contraction{
+	shortcut := entity.Shortcut{
 		OriginalURL: originalURL,
 		ShortURL:    hash,
 	}
-	r.Contractions = append(r.Contractions, contraction)
+	r.Shortcuts[shortcut.ShortURL] = shortcut
 
-	return contraction
+	return &shortcut, nil
 }

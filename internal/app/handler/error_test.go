@@ -12,8 +12,7 @@ import (
 
 func TestBadRequest(t *testing.T) {
 	type Wanted struct {
-		code     int
-		response string
+		code int
 	}
 	tests := []struct {
 		name string
@@ -26,8 +25,7 @@ func TestBadRequest(t *testing.T) {
 			err:  fmt.Errorf("ошибка"),
 			code: http.StatusBadRequest,
 			want: Wanted{
-				code:     400,
-				response: fmt.Errorf("ошибка\n").Error(),
+				code: 400,
 			},
 		},
 		{
@@ -35,8 +33,7 @@ func TestBadRequest(t *testing.T) {
 			err:  fmt.Errorf("нет доступа"),
 			code: http.StatusForbidden,
 			want: Wanted{
-				code:     403,
-				response: fmt.Errorf("нет доступа\n").Error(),
+				code: 403,
 			},
 		},
 	}
@@ -60,7 +57,7 @@ func TestBadRequest(t *testing.T) {
 			resBody, err := io.ReadAll(res.Body)
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.want.response, string(resBody))
+			assert.Equal(t, tt.err.Error()+"\n", string(resBody))
 		})
 	}
 }

@@ -16,17 +16,19 @@ type CustomServer struct {
 	Router *chi.Mux
 }
 
-func (s *CustomServer) Prepare() {
-	mainRepo := repo.GetRepo(s.Config)
+func (s *CustomServer) Run() {
+	mainRepo, err := repo.GetRepo(s.Config)
+	if err != nil {
+		panic(err)
+	}
+
 	s.Router = chi.NewRouter()
 	s.Router.Use(middleware.Compress(s.Logger.Sugar()))
 	s.Router.Use(middleware.LogMiddleware(s.Logger.Sugar()))
 	fillHandler(s.Router, mainRepo, s.Config)
-}
 
-func (s *CustomServer) Start() {
 	s.Logger.Sugar().Infow("Listen and serve", "Host", s.Config.ServerHost)
-	err := http.ListenAndServe(s.Config.ServerHost, s.Router)
+	err = http.ListenAndServe(s.Config.ServerHost, s.Router)
 	if err != nil {
 		panic(err)
 	}

@@ -11,12 +11,6 @@ func NewConsoleLogger() *zap.Logger {
 		// вызываем панику, если ошибка
 		panic("cannot initialize zap")
 	}
-	// это нужно добавить, если логер буферизован
-	// в данном случае не буферизован, но привычка хорошая
-	//не знаю, как обрабатывать ошибку
-	defer func() {
-		_ = logger.Sync()
-	}()
 
 	return logger
 }

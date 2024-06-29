@@ -35,7 +35,7 @@ func TestCreateLinkPage(t *testing.T) {
 		want        want
 	}{
 		{
-			name:        "Base #1",
+			name:        "Работоспособный вариант в пустое хранилище",
 			body:        strings.NewReader("http://ya.ru"),
 			contentType: "text/plain",
 			want: want{
@@ -45,7 +45,7 @@ func TestCreateLinkPage(t *testing.T) {
 			},
 		},
 		{
-			name:        "Base #2",
+			name:        "Ту же самую ссылку повторно отправить",
 			body:        strings.NewReader("http://ya.ru"),
 			contentType: "text/plain",
 			want: want{
@@ -55,7 +55,7 @@ func TestCreateLinkPage(t *testing.T) {
 			},
 		},
 		{
-			name:        "Empty Body",
+			name:        "Пустое тело запроса проверить",
 			body:        strings.NewReader(""),
 			contentType: "text/plain",
 			want: want{

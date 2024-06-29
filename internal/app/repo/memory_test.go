@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
 	"shortener/internal/app/human"
@@ -9,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestMemoryRepository_CreateContraction(t *testing.T) {
+func TestMemoryRepository_CreateShortcut(t *testing.T) {
 	type args struct {
 		host string
 	}
@@ -50,19 +51,20 @@ func TestMemoryRepository_CreateContraction(t *testing.T) {
 			cfg.DisplayLink = tt.args.host
 			r := CreateMemoryRepository(cfg)
 
-			testContraction := r.CreateContraction(tt.link)
+			testShortcut, err := r.CreateShortcut(tt.link)
+			require.NoError(t, err)
 
-			if !strings.HasPrefix(human.GetFullShortURL(cfg, testContraction), tt.want) {
-				t.Errorf("Contraction has incorrect prefix, got: %v,  want %v", human.GetFullShortURL(cfg, testContraction), tt.want)
+			if !strings.HasPrefix(human.GetFullShortURL(cfg, testShortcut), tt.want) {
+				t.Errorf("Shortcut has incorrect prefix, got: %v,  want %v", human.GetFullShortURL(cfg, testShortcut), tt.want)
 			}
 		})
 	}
 }
 
-func TestMemoryRepository_GetContraction(t *testing.T) {
+func TestMemoryRepository_GetShortcut(t *testing.T) {
 	type fields struct {
-		Contractions []*entity.Contraction
-		Host         string
+		Shortcuts map[string]entity.Shortcut
+		Host      string
 	}
 
 	tests := []struct {
@@ -75,12 +77,12 @@ func TestMemoryRepository_GetContraction(t *testing.T) {
 		{
 			name: "Базовый функционал #1",
 			fields: fields{
-				Contractions: []*entity.Contraction{
-					{
+				Shortcuts: map[string]entity.Shortcut{
+					"yaru12345": {
 						ShortURL:    "yaru12345",
 						OriginalURL: "http://ya.ru",
 					},
-					{
+					"qwerty": {
 						ShortURL:    "qwerty",
 						OriginalURL: "http://qwerty.ru",
 					},
@@ -93,12 +95,12 @@ func TestMemoryRepository_GetContraction(t *testing.T) {
 		{
 			name: "Базовый функционал #2",
 			fields: fields{
-				Contractions: []*entity.Contraction{
-					{
+				Shortcuts: map[string]entity.Shortcut{
+					"yaru12345": {
 						ShortURL:    "yaru12345",
 						OriginalURL: "http://ya.ru",
 					},
-					{
+					"qwerty": {
 						ShortURL:    "qwerty",
 						OriginalURL: "http://qwerty.ru",
 					},
@@ -111,12 +113,12 @@ func TestMemoryRepository_GetContraction(t *testing.T) {
 		{
 			name: "Не найдено #1",
 			fields: fields{
-				Contractions: []*entity.Contraction{
-					{
+				Shortcuts: map[string]entity.Shortcut{
+					"yaru12345": {
 						ShortURL:    "yaru12345",
 						OriginalURL: "http://ya.ru",
 					},
-					{
+					"qwerty": {
 						ShortURL:    "qwerty",
 						OriginalURL: "http://qwerty.ru",
 					},
@@ -130,37 +132,37 @@ func TestMemoryRepository_GetContraction(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := config.NewConfig()
 			s := MemoryRepository{
-				Contractions: tt.fields.Contractions,
-				Config:       cfg,
+				Shortcuts: tt.fields.Shortcuts,
+				Config:    cfg,
 			}
-			testContraction, err := s.GetContraction(tt.hash)
+			testShortcut, err := s.GetShortcut(tt.hash)
 
 			if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
-				t.Errorf("GetContraction() got error = %v, want error = %v", err, tt.wantErr)
+				t.Errorf("GetShortcut() got error = %v, want error = %v", err, tt.wantErr)
 				return
 			}
 
 			if err != nil && tt.wantErr == nil {
-				t.Errorf("GetContraction() got error = %v, want error = %v", err, tt.wantErr)
+				t.Errorf("GetShortcut() got error = %v, want error = %v", err, tt.wantErr)
 				return
 			}
 
 			if err == nil && tt.wantErr != nil {
-				t.Errorf("GetContraction() got error = %v, want error = %v", err, tt.wantErr)
+				t.Errorf("GetShortcut() got error = %v, want error = %v", err, tt.wantErr)
 				return
 			}
 
-			if err == nil && testContraction.OriginalURL != tt.want {
-				t.Errorf("GetContraction() got = %v, want %v", testContraction.OriginalURL, tt.want)
+			if err == nil && testShortcut.OriginalURL != tt.want {
+				t.Errorf("GetShortcut() got = %v, want %v", testShortcut.OriginalURL, tt.want)
 			}
 		})
 	}
 }
 
-func TestMemoryRepository_HasContraction(t *testing.T) {
+func TestMemoryRepository_HasShortcut(t *testing.T) {
 	type fields struct {
-		Contractions []*entity.Contraction
-		Host         string
+		Shortcuts map[string]entity.Shortcut
+		Host      string
 	}
 
 	tests := []struct {
@@ -172,12 +174,12 @@ func TestMemoryRepository_HasContraction(t *testing.T) {
 		{
 			name: "There is hash",
 			fields: fields{
-				Contractions: []*entity.Contraction{
-					{
+				Shortcuts: map[string]entity.Shortcut{
+					"yaru12345": {
 						ShortURL:    "yaru12345",
 						OriginalURL: "http://ya.ru",
 					},
-					{
+					"qwerty": {
 						ShortURL:    "qwerty",
 						OriginalURL: "http://qwerty.ru",
 					},
@@ -189,12 +191,12 @@ func TestMemoryRepository_HasContraction(t *testing.T) {
 		{
 			name: "There is not hash",
 			fields: fields{
-				Contractions: []*entity.Contraction{
-					{
+				Shortcuts: map[string]entity.Shortcut{
+					"yaru12345": {
 						ShortURL:    "yaru12345",
 						OriginalURL: "http://ya.ru",
 					},
-					{
+					"qwerty": {
 						ShortURL:    "qwerty",
 						OriginalURL: "http://qwerty.ru",
 					},
@@ -207,10 +209,10 @@ func TestMemoryRepository_HasContraction(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := MemoryRepository{
-				Contractions: tt.fields.Contractions,
+				Shortcuts: tt.fields.Shortcuts,
 			}
-			if got := s.HasContraction(tt.hash); got != tt.want {
-				t.Errorf("HasContraction() = %v, want %v", got, tt.want)
+			if got := s.HasShortcut(tt.hash); got != tt.want {
+				t.Errorf("HasShortcut() = %v, want %v", got, tt.want)
 			}
 		})
 	}

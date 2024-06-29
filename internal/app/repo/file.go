@@ -2,8 +2,8 @@ package repo
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
+	"github.com/mailru/easyjson"
 	"os"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
@@ -12,66 +12,67 @@ import (
 
 // FileRepository Основная структура
 type FileRepository struct {
-	Contractions []*entity.Contraction
-	Config       *config.MainConfig
+	Shortcuts map[string]entity.Shortcut
+	Config    *config.MainConfig
 }
 
-func CreateFileRepository(config *config.MainConfig) *FileRepository {
+func CreateFileRepository(config *config.MainConfig) (*FileRepository, error) {
 	fileRepo := &FileRepository{
-		Contractions: []*entity.Contraction{},
-		Config:       config,
+		Shortcuts: map[string]entity.Shortcut{},
+		Config:    config,
 	}
 
 	err := fileRepo.init()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return fileRepo
+	return fileRepo, nil
 }
 
-// GetContraction Получить ссылку на основе URL
-func (r *FileRepository) GetContraction(shortURL string) (*entity.Contraction, error) {
-	for _, contraction := range r.Contractions {
-		if contraction.ShortURL == shortURL {
-			return contraction, nil
-		}
+// GetShortcut Получить ссылку на основе URL
+func (r *FileRepository) GetShortcut(shortURL string) (*entity.Shortcut, error) {
+	shortcut, ok := r.Shortcuts[shortURL]
+
+	if ok {
+		return &shortcut, nil
 	}
 
 	return nil, fmt.Errorf("unknown short url")
 }
 
-func (r *FileRepository) HasContraction(shortURL string) bool {
-	_, err := r.GetContraction(shortURL)
+func (r *FileRepository) HasShortcut(shortURL string) bool {
+	_, err := r.GetShortcut(shortURL)
 
 	return err == nil
 }
 
-// CreateContraction Создать ссылку - пока будем хранить в мапе
-func (r *FileRepository) CreateContraction(originalURL string) *entity.Contraction {
+// CreateShortcut Создать ссылку - пока будем хранить в мапе
+func (r *FileRepository) CreateShortcut(originalURL string) (*entity.Shortcut, error) {
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
-		if !r.HasContraction(hash) {
+		if !r.HasShortcut(hash) {
 			break
 		}
 	}
 
-	contraction := &entity.Contraction{
+	shortcut := entity.Shortcut{
 		OriginalURL: originalURL,
 		ShortURL:    hash,
 	}
 
-	data, err := json.Marshal(contraction)
+	data, err := easyjson.Marshal(shortcut)
+
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	data = append(data, []byte("\n")...)
 
 	file, err := os.OpenFile(r.Config.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	defer func() {
@@ -83,12 +84,12 @@ func (r *FileRepository) CreateContraction(originalURL string) *entity.Contracti
 
 	_, err = file.Write(data)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	r.Contractions = append(r.Contractions, contraction)
+	r.Shortcuts[hash] = shortcut
 
-	return contraction
+	return &shortcut, nil
 }
 
 func (r *FileRepository) init() error {
@@ -108,14 +109,14 @@ func (r *FileRepository) init() error {
 	for sc.Scan() {
 		data := sc.Text()
 
-		contraction := entity.Contraction{}
-		err = json.Unmarshal([]byte(data), &contraction)
+		shortcut := entity.Shortcut{}
+		err = easyjson.Unmarshal([]byte(data), &shortcut)
 
 		if err != nil {
 			return err
 		}
 
-		r.Contractions = append(r.Contractions, &contraction)
+		r.Shortcuts[shortcut.ShortURL] = shortcut
 	}
 
 	return nil

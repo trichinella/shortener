@@ -29,13 +29,14 @@ func TestGetLinkPage(t *testing.T) {
 	}
 	tests := []struct {
 		name        string
-		contraction *entity.Contraction
-		hash        string
+		shortcut    *entity.Shortcut
+		shortURL    string
+		originalURL string
 		want        want
 	}{
 		{
 			name:        "Base",
-			contraction: s.CreateContraction("http://ya.ru"),
+			originalURL: "http://ya.ru",
 			want: want{
 				code: http.StatusTemporaryRedirect,
 				url:  "http://ya.ru",
@@ -43,10 +44,10 @@ func TestGetLinkPage(t *testing.T) {
 		},
 		{
 			name:        "Error",
-			hash:        "itsnothabr",
-			contraction: s.CreateContraction("http://ya.ru"),
+			shortURL:    "itsnothabr",
+			originalURL: "http://ya.ru",
 			want: want{
-				code:     http.StatusBadRequest,
+				code:     http.StatusNotFound,
 				url:      "http://habr.ru",
 				response: fmt.Errorf("unknown short url\n").Error(),
 			},
@@ -55,12 +56,15 @@ func TestGetLinkPage(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			shortURL := test.contraction.ShortURL
-			if test.hash != "" {
-				shortURL = test.hash
+			shortcut, err := s.CreateShortcut(test.originalURL)
+			require.NoError(t, err)
+
+			hash := shortcut.ShortURL
+			if test.shortURL != "" {
+				hash = test.shortURL
 			}
 
-			req, err := http.NewRequest(http.MethodGet, string(ts.URL)+"/"+shortURL, nil)
+			req, err := http.NewRequest(http.MethodGet, string(ts.URL)+"/"+hash, nil)
 			req.Header.Set("Content-Type", "text/plain")
 
 			require.NoError(t, err)

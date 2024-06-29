@@ -28,24 +28,33 @@ func Compress(sugar *zap.SugaredLogger) func(next http.Handler) http.Handler {
 				return
 			}
 
-			gz, err := gzip.NewWriterLevel(w, gzip.DefaultCompression)
-
+			gz, err := getCompressor(w, sugar)
 			if err != nil {
-				sugar.Fatal(err)
-				panic(err)
+				sugar.Error(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
-
-			defer func() {
-				if err := gz.Close(); err != nil {
-					sugar.Fatal(err)
-					panic(err)
-				}
-			}()
 
 			w.Header().Set("Content-Encoding", "gzip")
 			next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, r)
 		})
 	}
+}
+
+func getCompressor(w http.ResponseWriter, sugar *zap.SugaredLogger) (io.Writer, error) {
+	gz, err := gzip.NewWriterLevel(w, gzip.DefaultCompression)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := gz.Close(); err != nil {
+			sugar.Error(err)
+		}
+	}()
+
+	return gz, nil
 }
 
 type gzipWriter struct {
