@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
@@ -137,23 +138,11 @@ func TestMemoryRepository_GetShortcut(t *testing.T) {
 			}
 			testShortcut, err := s.GetShortcut(tt.hash)
 
-			if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
-				t.Errorf("GetShortcut() got error = %v, want error = %v", err, tt.wantErr)
-				return
-			}
-
-			if err != nil && tt.wantErr == nil {
-				t.Errorf("GetShortcut() got error = %v, want error = %v", err, tt.wantErr)
-				return
-			}
-
-			if err == nil && tt.wantErr != nil {
-				t.Errorf("GetShortcut() got error = %v, want error = %v", err, tt.wantErr)
-				return
-			}
-
-			if err == nil && testShortcut.OriginalURL != tt.want {
-				t.Errorf("GetShortcut() got = %v, want %v", testShortcut.OriginalURL, tt.want)
+			if tt.wantErr == nil {
+				require.NoError(t, tt.wantErr, err)
+				assert.Equal(t, tt.want, testShortcut.OriginalURL)
+			} else {
+				require.Error(t, tt.wantErr, err)
 			}
 		})
 	}
@@ -211,9 +200,9 @@ func TestMemoryRepository_HasShortcut(t *testing.T) {
 			s := MemoryRepository{
 				Shortcuts: tt.fields.Shortcuts,
 			}
-			if got := s.HasShortcut(tt.hash); got != tt.want {
-				t.Errorf("HasShortcut() = %v, want %v", got, tt.want)
-			}
+
+			got := s.HasShortcut(tt.hash)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

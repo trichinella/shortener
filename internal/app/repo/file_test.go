@@ -2,7 +2,6 @@ package repo
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -21,7 +20,6 @@ func TestFileRepository_init(t *testing.T) {
 		name        string
 		fields      fields
 		fileContent string
-		wantErr     bool
 		want        int
 	}{
 		{
@@ -37,8 +35,7 @@ func TestFileRepository_init(t *testing.T) {
 {"uuid":"00000000-0000-0000-0000-000000000000","short_url":"Fxuyi8z","original_url":"https://practicum.yandex.ru/"}
 {"uuid":"00000000-0000-0000-0000-000000000000","short_url":"RuPCOGq","original_url":"https://practicum.yandex.ru/"}
 {"uuid":"00000000-0000-0000-0000-000000000000","short_url":"1GgQeMp","original_url":"http://ya.ru"}`,
-			wantErr: false,
-			want:    5,
+			want: 5,
 		},
 		{
 			name: "Пример из 0 сокращений",
@@ -49,21 +46,17 @@ func TestFileRepository_init(t *testing.T) {
 				},
 			},
 			fileContent: ``,
-			wantErr:     false,
 			want:        0,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := os.WriteFile(tt.fields.Config.FileStoragePath, []byte(tt.fileContent), 0666)
-			if err != nil {
-				t.Fatalf("Incorrect test: %v", err)
-			}
+			require.NoError(t, err)
+
 			defer func(name string) {
 				err := os.Remove(name)
-				if err != nil {
-					t.Fatalf("Incorrect test: %v", err)
-				}
+				require.NoError(t, err, "Incorrect test")
 			}(tt.fields.Config.FileStoragePath)
 
 			s := &FileRepository{
@@ -71,9 +64,8 @@ func TestFileRepository_init(t *testing.T) {
 				Config:    tt.fields.Config,
 			}
 
-			if err := s.init(); (err != nil) != tt.wantErr {
-				t.Errorf("init() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			err = s.init()
+			require.NoError(t, err)
 
 			assert.Len(t, s.Shortcuts, tt.want)
 		})
@@ -148,14 +140,10 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 
 			defer func(name string) {
 				err := os.Remove(name)
-				if err != nil {
-					t.Error(fmt.Errorf("incorrect test: %w", err))
-				}
+				require.NoError(t, err)
 			}(tt.fields.Config.FileStoragePath)
 			file, err := os.OpenFile(tt.fields.Config.FileStoragePath, os.O_RDONLY, 0666)
-			if err != nil {
-				t.Error(fmt.Errorf("incorrect test: %w", err))
-			}
+			require.NoError(t, err)
 			cnt, _ := LineCounter(file)
 
 			assert.Equal(t, tt.wantCount, cnt)

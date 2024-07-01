@@ -79,9 +79,7 @@ func TestGetLinkPage(t *testing.T) {
 			}
 
 			resp, err := client.Do(req)
-			if err != nil {
-				require.NoError(t, err)
-			}
+			require.NoError(t, err)
 
 			respBody, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
@@ -99,9 +97,7 @@ func TestGetLinkPage(t *testing.T) {
 				return
 			}
 
-			if !hasRedirect {
-				t.Fatalf("There is not redirect")
-			}
+			require.True(t, hasRedirect, "There is not redirect")
 		})
 	}
 }
