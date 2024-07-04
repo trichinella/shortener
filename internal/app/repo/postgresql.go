@@ -16,6 +16,8 @@ func GetDB(logger *zap.Logger) *sql.DB {
 	return db
 }
 
+//go:generate mockgen -destination=../mocks/mock_postgresql.go -package=mocks shortener/internal/app/repo Pingable
+
 type Pingable interface {
 	Ping() error
 }

@@ -8,7 +8,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"net/http"
 	"net/http/httptest"
-	mocks "shortener/internal/mocks/repo"
+	"shortener/internal/app/mocks"
 	"testing"
 )
 
