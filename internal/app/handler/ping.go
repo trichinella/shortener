@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"database/sql"
 	"net/http"
+	"shortener/internal/app/repo"
 )
 
 // PingDataBase что-то вроде healthcheck для БД
-func PingDataBase(db *sql.DB) http.HandlerFunc {
+func PingDataBase(db repo.Pingable) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := db.Ping()
 		if err != nil {
@@ -15,6 +15,5 @@ func PingDataBase(db *sql.DB) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		return
 	}
 }

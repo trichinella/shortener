@@ -15,3 +15,7 @@ func GetDB(logger *zap.Logger) *sql.DB {
 
 	return db
 }
+
+type Pingable interface {
+	Ping() error
+}
