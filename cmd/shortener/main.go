@@ -1,24 +1,24 @@
 package main
 
 import (
-	"flag"
-	"shortener/internal/app/config"
+	"shortener/internal/app/repo"
 	"shortener/internal/app/server"
 )
 
 func main() {
-	flag.Parse()
-
-	//Заполнение конфига
-	cfg := config.NewConfig()
-	cfg.UpdateByOptions(config.BaseOptions)
-	cfg.UpdateByEnv()
-
 	logger := NewConsoleLogger()
 	defer func() {
 		_ = logger.Sync()
 	}()
 
-	srv := server.CreateServer(cfg, logger)
+	db := repo.GetDB(logger)
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Fatal(err.Error())
+		}
+	}()
+
+	srv := server.CreateServer(logger, db)
 	srv.Run()
 }

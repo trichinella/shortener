@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"shortener/internal/app/config"
 	"shortener/internal/app/handler"
 	"shortener/internal/app/repo"
 	"testing"
@@ -19,10 +18,9 @@ func TestCompress(t *testing.T) {
 	Router := chi.NewRouter()
 	logger, _ := zap.NewDevelopment()
 	Router.Use(Compress(logger.Sugar()))
-	cfg := config.NewConfig()
-	repository := repo.CreateMemoryRepository(cfg)
-	Router.Post(`/api/shorten`, handler.CreateLinkPageJSON(repository, cfg))
-	Router.Post(`/`, handler.CreateLinkPage(repository, cfg))
+	repository := repo.CreateMemoryRepository()
+	Router.Post(`/api/shorten`, handler.CreateLinkPageJSON(repository))
+	Router.Post(`/`, handler.CreateLinkPage(repository))
 	srv := httptest.NewServer(Router)
 	defer srv.Close()
 

@@ -8,15 +8,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
 	"shortener/internal/app/repo"
 	"testing"
 )
 
 func TestGetLinkPage(t *testing.T) {
-	cfg := config.NewConfig()
-	s := repo.CreateMemoryRepository(cfg)
+	s := repo.CreateMemoryRepository()
 	router := chi.NewRouter()
 	router.Get(`/{shortURL}`, GetLinkPage(s))
 	ts := httptest.NewServer(router)

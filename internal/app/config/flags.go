@@ -5,16 +5,18 @@ import (
 	"os"
 )
 
-type Options struct {
+type options struct {
 	ServerHost      string
 	DisplayLink     string
 	FileStoragePath string
+	DatabaseDSN     string
 }
 
-var BaseOptions = Options{}
+var baseOptions = options{}
 
 func init() {
-	flag.StringVar(&BaseOptions.ServerHost, "a", "localhost:8080", "Server host")
-	flag.StringVar(&BaseOptions.DisplayLink, "b", "http://localhost:8080", "Link displays for user")
-	flag.StringVar(&BaseOptions.FileStoragePath, "f", os.TempDir()+"/short-url-db-test.json", "File path for storage")
+	flag.StringVar(&baseOptions.ServerHost, "a", "localhost:8080", "Server host")
+	flag.StringVar(&baseOptions.DisplayLink, "b", "http://localhost:8080", "Link displays for user")
+	flag.StringVar(&baseOptions.DatabaseDSN, "d", "", "DSN for database")
+	flag.StringVar(&baseOptions.FileStoragePath, "f", os.TempDir()+"/short-url-db-test.json", "File path for storage")
 }

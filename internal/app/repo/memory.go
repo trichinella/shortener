@@ -2,22 +2,19 @@ package repo
 
 import (
 	"fmt"
-	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
 	"shortener/internal/app/random"
 )
 
-func CreateMemoryRepository(config *config.MainConfig) *MemoryRepository {
+func CreateMemoryRepository() *MemoryRepository {
 	return &MemoryRepository{
 		Shortcuts: map[string]entity.Shortcut{},
-		Config:    config,
 	}
 }
 
 // MemoryRepository Основная структура
 type MemoryRepository struct {
 	Shortcuts map[string]entity.Shortcut
-	Config    *config.MainConfig
 }
 
 // GetShortcut Получить сокращение на основе краткого URL

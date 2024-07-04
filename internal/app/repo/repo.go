@@ -12,10 +12,10 @@ type Repository interface {
 	HasShortcut(shortURL string) bool
 }
 
-func GetRepo(cfg *config.MainConfig) (Repository, error) {
-	if cfg.FileStoragePath == "" {
-		return CreateMemoryRepository(cfg), nil
+func GetRepo() (Repository, error) {
+	if config.State().FileStoragePath == "" {
+		return CreateMemoryRepository(), nil
 	}
 
-	return CreateFileRepository(cfg)
+	return CreateFileRepository()
 }

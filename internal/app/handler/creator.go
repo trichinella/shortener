@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"github.com/mailru/easyjson"
 	"net/http"
-	"shortener/internal/app/config"
 	"shortener/internal/app/human"
 	"shortener/internal/app/repo"
 )
 
 // CreateLinkPage Страница создания ссылки
-func CreateLinkPage(repository repo.Repository, cfg *config.MainConfig) http.HandlerFunc {
+func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, ok := handleCreateLinkBody(w, r)
 		if !ok {
@@ -24,7 +23,7 @@ func CreateLinkPage(repository repo.Repository, cfg *config.MainConfig) http.Han
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
-		_, err = w.Write([]byte(human.GetFullShortURL(cfg, shortcut)))
+		_, err = w.Write([]byte(human.GetFullShortURL(shortcut)))
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -33,7 +32,7 @@ func CreateLinkPage(repository repo.Repository, cfg *config.MainConfig) http.Han
 }
 
 // CreateLinkPageJSON Страница создания ссылки в формате JSON
-func CreateLinkPageJSON(repository repo.Repository, cfg *config.MainConfig) http.HandlerFunc {
+func CreateLinkPageJSON(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, ok := handleCreateLinkBody(w, r)
 		if !ok {
@@ -58,7 +57,7 @@ func CreateLinkPageJSON(repository repo.Repository, cfg *config.MainConfig) http
 			return
 		}
 
-		outputURL := &OutputURL{Result: human.GetFullShortURL(cfg, shortcut)}
+		outputURL := &OutputURL{Result: human.GetFullShortURL(shortcut)}
 		rawBytes, err := easyjson.Marshal(outputURL)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)

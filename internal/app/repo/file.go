@@ -13,13 +13,11 @@ import (
 // FileRepository Основная структура
 type FileRepository struct {
 	Shortcuts map[string]entity.Shortcut
-	Config    *config.MainConfig
 }
 
-func CreateFileRepository(config *config.MainConfig) (*FileRepository, error) {
+func CreateFileRepository() (*FileRepository, error) {
 	fileRepo := &FileRepository{
 		Shortcuts: map[string]entity.Shortcut{},
-		Config:    config,
 	}
 
 	err := fileRepo.init()
@@ -70,7 +68,7 @@ func (r *FileRepository) CreateShortcut(originalURL string) (*entity.Shortcut, e
 
 	data = append(data, []byte("\n")...)
 
-	file, err := os.OpenFile(r.Config.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	file, err := os.OpenFile(config.State().FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +91,7 @@ func (r *FileRepository) CreateShortcut(originalURL string) (*entity.Shortcut, e
 }
 
 func (r *FileRepository) init() error {
-	file, err := os.OpenFile(r.Config.FileStoragePath, os.O_RDONLY|os.O_CREATE|os.O_APPEND, 0666)
+	file, err := os.OpenFile(config.State().FileStoragePath, os.O_RDONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return err
 	}

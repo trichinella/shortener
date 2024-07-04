@@ -12,9 +12,18 @@ import (
 )
 
 func TestFileRepository_init(t *testing.T) {
+	fileStoragePath := config.State().FileStoragePath
+
+	t.Setenv("FILE_STORAGE_PATH", os.TempDir()+"/f.json")
+	t.Cleanup(func() {
+		err := os.Setenv("FILE_STORAGE_PATH", fileStoragePath)
+		if err != nil {
+			require.NoError(t, err)
+		}
+	})
+
 	type fields struct {
 		Shortcuts map[string]entity.Shortcut
-		Config    *config.MainConfig
 	}
 	tests := []struct {
 		name        string
@@ -26,9 +35,6 @@ func TestFileRepository_init(t *testing.T) {
 			name: "Пример из 5 сокращений",
 			fields: fields{
 				Shortcuts: map[string]entity.Shortcut{},
-				Config: &config.MainConfig{
-					FileStoragePath: os.TempDir() + "/f.json",
-				},
 			},
 			fileContent: `{"uuid":"00000000-0000-0000-0000-000000000000","short_url":"lvs3iWf","original_url":"https://practicum.yandex.ru/"}
 {"uuid":"00000000-0000-0000-0000-000000000000","short_url":"c7n4INA","original_url":"https://practicum.yandex.ru/"}
@@ -41,9 +47,6 @@ func TestFileRepository_init(t *testing.T) {
 			name: "Пример из 0 сокращений",
 			fields: fields{
 				Shortcuts: map[string]entity.Shortcut{},
-				Config: &config.MainConfig{
-					FileStoragePath: os.TempDir() + "/f1.json",
-				},
 			},
 			fileContent: ``,
 			want:        0,
@@ -51,17 +54,16 @@ func TestFileRepository_init(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := os.WriteFile(tt.fields.Config.FileStoragePath, []byte(tt.fileContent), 0666)
+			err := os.WriteFile(config.State().FileStoragePath, []byte(tt.fileContent), 0666)
 			require.NoError(t, err)
 
 			defer func(name string) {
 				err := os.Remove(name)
 				require.NoError(t, err, "Incorrect test")
-			}(tt.fields.Config.FileStoragePath)
+			}(config.State().FileStoragePath)
 
 			s := &FileRepository{
 				Shortcuts: tt.fields.Shortcuts,
-				Config:    tt.fields.Config,
 			}
 
 			err = s.init()
@@ -73,10 +75,19 @@ func TestFileRepository_init(t *testing.T) {
 }
 
 func TestFileRepository_CreateShortcut(t *testing.T) {
+	fileStoragePath := config.State().FileStoragePath
+
+	t.Setenv("FILE_STORAGE_PATH", os.TempDir()+"/q.json")
+	t.Cleanup(func() {
+		err := os.Setenv("FILE_STORAGE_PATH", fileStoragePath)
+		if err != nil {
+			require.NoError(t, err)
+		}
+	})
+
 	var err error
 	type fields struct {
 		Shortcuts map[string]entity.Shortcut
-		Config    *config.MainConfig
 	}
 	type args struct {
 		OriginalURL string
@@ -92,9 +103,6 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 			name: "Пример из 1 сокращения",
 			fields: fields{
 				Shortcuts: map[string]entity.Shortcut{},
-				Config: &config.MainConfig{
-					FileStoragePath: os.TempDir() + "/q.json",
-				},
 			},
 			args: struct {
 				OriginalURL string
@@ -110,9 +118,6 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 			name: "Пример из 3 сокращения",
 			fields: fields{
 				Shortcuts: map[string]entity.Shortcut{},
-				Config: &config.MainConfig{
-					FileStoragePath: os.TempDir() + "/q1.json",
-				},
 			},
 			args: struct {
 				OriginalURL string
@@ -129,7 +134,6 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &FileRepository{
 				Shortcuts: tt.fields.Shortcuts,
-				Config:    tt.fields.Config,
 			}
 
 			var gotShortcut *entity.Shortcut
@@ -141,8 +145,8 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 			defer func(name string) {
 				err := os.Remove(name)
 				require.NoError(t, err)
-			}(tt.fields.Config.FileStoragePath)
-			file, err := os.OpenFile(tt.fields.Config.FileStoragePath, os.O_RDONLY, 0666)
+			}(config.State().FileStoragePath)
+			file, err := os.OpenFile(config.State().FileStoragePath, os.O_RDONLY, 0666)
 			require.NoError(t, err)
 			cnt, _ := LineCounter(file)
 

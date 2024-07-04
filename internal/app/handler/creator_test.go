@@ -9,17 +9,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
-	"shortener/internal/app/config"
 	"shortener/internal/app/repo"
 	"strings"
 	"testing"
 )
 
 func TestCreateLinkPage(t *testing.T) {
-	cfg := config.NewConfig()
-	s := repo.CreateMemoryRepository(cfg)
+	s := repo.CreateMemoryRepository()
 	router := chi.NewRouter()
-	router.Post(`/`, CreateLinkPage(s, cfg))
+	router.Post(`/`, CreateLinkPage(s))
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
@@ -40,7 +38,6 @@ func TestCreateLinkPage(t *testing.T) {
 			contentType: "text/plain",
 			want: want{
 				code:        201,
-				response:    s.Config.DisplayLink,
 				contentType: "text/plain",
 			},
 		},
@@ -50,7 +47,6 @@ func TestCreateLinkPage(t *testing.T) {
 			contentType: "text/plain",
 			want: want{
 				code:        201,
-				response:    s.Config.DisplayLink,
 				contentType: "text/plain",
 			},
 		},
@@ -168,9 +164,8 @@ func TestCreateLinkPageJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, tt.target, strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			cfg := config.NewConfig()
-			s := repo.CreateMemoryRepository(cfg)
-			CreateLinkPageJSON(s, cfg)(w, req)
+			s := repo.CreateMemoryRepository()
+			CreateLinkPageJSON(s)(w, req)
 			res := w.Result()
 
 			defer func() {

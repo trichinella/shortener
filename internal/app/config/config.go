@@ -9,15 +9,17 @@ type MainConfig struct {
 	DisplayLink     string
 	ServerHost      string
 	FileStoragePath string
+	DatabaseDSN     string
 }
 
-func (config *MainConfig) UpdateByOptions(o Options) {
+func (config *MainConfig) updateByOptions(o options) {
 	config.ServerHost = o.ServerHost
 	config.DisplayLink = strings.Trim(o.DisplayLink, "/")
 	config.FileStoragePath = o.FileStoragePath
+	config.DatabaseDSN = o.DatabaseDSN
 }
 
-func (config *MainConfig) UpdateByEnv() {
+func (config *MainConfig) updateByEnv() {
 	envDisplayLink := os.Getenv("BASE_URL")
 	if envDisplayLink != "" {
 		config.DisplayLink = envDisplayLink
@@ -32,9 +34,14 @@ func (config *MainConfig) UpdateByEnv() {
 	if envFileStoragePath != "" {
 		config.FileStoragePath = envFileStoragePath
 	}
+
+	envDatabaseDSN := os.Getenv("DATABASE_DSN")
+	if envDatabaseDSN != "" {
+		config.DatabaseDSN = envDatabaseDSN
+	}
 }
 
-func NewConfig() *MainConfig {
+func newConfig() *MainConfig {
 	return &MainConfig{
 		DisplayLink: "http://localhost:8080",
 		ServerHost:  "localhost:8080",
