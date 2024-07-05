@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
@@ -54,7 +55,7 @@ func TestGetLinkPage(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			shortcut, err := s.CreateShortcut(test.originalURL)
+			shortcut, err := s.CreateShortcut(context.Background(), test.originalURL)
 			require.NoError(t, err)
 
 			hash := shortcut.ShortURL

@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func TestMemoryRepository_CreateShortcut(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := CreateMemoryRepository()
 
-			testShortcut, err := r.CreateShortcut(tt.link)
+			testShortcut, err := r.CreateShortcut(context.Background(), tt.link)
 			require.NoError(t, err)
 
 			if !strings.HasPrefix(human.GetFullShortURL(testShortcut), config.State().DisplayLink) {
@@ -115,7 +116,7 @@ func TestMemoryRepository_GetShortcut(t *testing.T) {
 			s := MemoryRepository{
 				Shortcuts: tt.fields.Shortcuts,
 			}
-			testShortcut, err := s.GetShortcut(tt.hash)
+			testShortcut, err := s.GetShortcut(context.Background(), tt.hash)
 
 			if tt.wantErr == nil {
 				require.NoError(t, tt.wantErr, err)
@@ -176,11 +177,11 @@ func TestMemoryRepository_HasShortcut(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := MemoryRepository{
+			r := MemoryRepository{
 				Shortcuts: tt.fields.Shortcuts,
 			}
 
-			got := s.HasShortcut(tt.hash)
+			got := HasShortcut(context.Background(), &r, tt.hash)
 			assert.Equal(t, tt.want, got)
 		})
 	}

@@ -16,7 +16,7 @@ func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 			return
 		}
 
-		shortcut, err := repository.CreateShortcut(string(body))
+		shortcut, err := repository.CreateShortcut(r.Context(), string(body))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -51,7 +51,7 @@ func CreateLinkPageJSON(repository repo.Repository) http.HandlerFunc {
 			return
 		}
 
-		shortcut, err := repository.CreateShortcut(inputURL.URL)
+		shortcut, err := repository.CreateShortcut(r.Context(), inputURL.URL)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)
 			return

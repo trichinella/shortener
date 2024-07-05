@@ -2,15 +2,17 @@ package repo
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"github.com/mailru/easyjson"
 	"os"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
+	"shortener/internal/app/logging"
 	"shortener/internal/app/random"
 )
 
-// FileRepository Основная структура
+// FileRepository репозиторий на основе хранения в файле
 type FileRepository struct {
 	Shortcuts map[string]entity.Shortcut
 }
@@ -29,7 +31,7 @@ func CreateFileRepository() (*FileRepository, error) {
 }
 
 // GetShortcut Получить ссылку на основе URL
-func (r *FileRepository) GetShortcut(shortURL string) (*entity.Shortcut, error) {
+func (r *FileRepository) GetShortcut(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
 	shortcut, ok := r.Shortcuts[shortURL]
 
 	if ok {
@@ -39,18 +41,12 @@ func (r *FileRepository) GetShortcut(shortURL string) (*entity.Shortcut, error) 
 	return nil, fmt.Errorf("unknown short url")
 }
 
-func (r *FileRepository) HasShortcut(shortURL string) bool {
-	_, err := r.GetShortcut(shortURL)
-
-	return err == nil
-}
-
 // CreateShortcut Создать ссылку - пока будем хранить в мапе
-func (r *FileRepository) CreateShortcut(originalURL string) (*entity.Shortcut, error) {
+func (r *FileRepository) CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
-		if !r.HasShortcut(hash) {
+		if !HasShortcut(ctx, r, hash) {
 			break
 		}
 	}
@@ -76,7 +72,7 @@ func (r *FileRepository) CreateShortcut(originalURL string) (*entity.Shortcut, e
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			panic(err)
+			logging.Sugar.Fatal(err)
 		}
 	}()
 
@@ -99,7 +95,7 @@ func (r *FileRepository) init() error {
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			panic(err)
+			logging.Sugar.Fatal(err)
 		}
 	}()
 

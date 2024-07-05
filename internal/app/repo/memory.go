@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"fmt"
 	"shortener/internal/app/entity"
 	"shortener/internal/app/random"
@@ -12,13 +13,13 @@ func CreateMemoryRepository() *MemoryRepository {
 	}
 }
 
-// MemoryRepository Основная структура
+// MemoryRepository репозиторий на основе хранения в памяти
 type MemoryRepository struct {
 	Shortcuts map[string]entity.Shortcut
 }
 
 // GetShortcut Получить сокращение на основе краткого URL
-func (r *MemoryRepository) GetShortcut(shortURL string) (*entity.Shortcut, error) {
+func (r *MemoryRepository) GetShortcut(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
 	shortcut, ok := r.Shortcuts[shortURL]
 
 	if ok {
@@ -28,18 +29,12 @@ func (r *MemoryRepository) GetShortcut(shortURL string) (*entity.Shortcut, error
 	return nil, fmt.Errorf("unknown short url")
 }
 
-func (r *MemoryRepository) HasShortcut(shortURL string) bool {
-	_, err := r.GetShortcut(shortURL)
-
-	return err == nil
-}
-
 // CreateShortcut Создать сокращение
-func (r *MemoryRepository) CreateShortcut(originalURL string) (*entity.Shortcut, error) {
+func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
-		if !r.HasShortcut(hash) {
+		if !HasShortcut(ctx, r, hash) {
 			break
 		}
 	}

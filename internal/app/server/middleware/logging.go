@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"go.uber.org/zap"
 	"net/http"
+	"shortener/internal/app/logging"
 	"time"
 )
 
@@ -28,7 +28,7 @@ func (lrw LogResponseWriter) WriteHeader(statusCode int) {
 	lrw.ResponseData.statusCode = statusCode
 }
 
-func LogMiddleware(sugar *zap.SugaredLogger) func(next http.Handler) http.Handler {
+func LogMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
@@ -37,7 +37,7 @@ func LogMiddleware(sugar *zap.SugaredLogger) func(next http.Handler) http.Handle
 				ResponseWriter: w,
 			}
 			next.ServeHTTP(lrw, r)
-			sugar.Infow("Request",
+			logging.Sugar.Infow("Request",
 				"URI", r.RequestURI,
 				"Method", r.Method,
 				"Execution time", time.Since(start),

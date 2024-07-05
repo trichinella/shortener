@@ -13,7 +13,7 @@ func State() *MainConfig {
 		flag.Parse()
 
 		cfg = newConfig()
-		cfg.updateByOptions(baseOptions)
+		cfg.updateByFlags(baseOptions)
 		cfg.updateByEnv()
 	})
 

@@ -97,6 +97,7 @@ func TestCreateLinkPage(t *testing.T) {
 }
 
 func TestCreateLinkPageJSON(t *testing.T) {
+
 	type want struct {
 		code        int
 		response    string

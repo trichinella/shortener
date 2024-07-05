@@ -2,6 +2,7 @@ package repo
 
 import (
 	"bytes"
+	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -138,7 +139,7 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 
 			var gotShortcut *entity.Shortcut
 			for i := 0; i < tt.wantCount; i++ {
-				gotShortcut, err = r.CreateShortcut(tt.args.OriginalURL)
+				gotShortcut, err = r.CreateShortcut(context.Background(), tt.args.OriginalURL)
 				require.NoError(t, err)
 			}
 
