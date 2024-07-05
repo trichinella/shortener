@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"shortener/internal/app/config"
@@ -34,8 +37,23 @@ type PostgresRepository struct {
 }
 
 func CreatePostgresRepository(db *sql.DB) *PostgresRepository {
+	execMigrations()
 	return &PostgresRepository{
 		DB: db,
+	}
+}
+
+func execMigrations() {
+	m, err := migrate.New(
+		"file://internal/migrations",
+		config.State().DatabaseDSN)
+	if err != nil {
+		logging.Sugar.Fatal(err)
+	}
+
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		logging.Sugar.Fatal(err)
 	}
 }
 
