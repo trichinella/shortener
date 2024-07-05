@@ -11,6 +11,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
+	"shortener/internal/app/handler/inout"
+	"shortener/internal/app/human"
 	"shortener/internal/app/logging"
 	"shortener/internal/app/random"
 	"time"
@@ -112,4 +114,61 @@ func (r *PostgresRepository) CreateShortcut(ctx context.Context, originalURL str
 	}
 
 	return &shortcut, nil
+}
+
+func (r *PostgresRepository) CreateBatch(ctx context.Context, batchInput inout.ExternalBatchInput) (result inout.ExternalBatchOutput, err error) {
+	//нормальное поведение
+	if len(batchInput) == 0 {
+		return result, nil
+	}
+
+	tx, err := r.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, externalInput := range batchInput {
+		var hash string
+		for {
+			hash = random.GenerateRandomString(7)
+			if !HasShortcut(ctx, r, hash) {
+				break
+			}
+		}
+		id, err := uuid.NewUUID()
+		if err != nil {
+			return nil, err
+		}
+
+		shortcut := entity.Shortcut{
+			ID:          id,
+			OriginalURL: externalInput.OriginalURL,
+			ShortURL:    hash,
+		}
+
+		_, err = tx.ExecContext(ctx,
+			"INSERT INTO public.shortcuts (uuid, original_url, short_url) VALUES ($1, $2, $3)",
+			shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL)
+
+		if err != nil {
+			errRollback := tx.Rollback()
+			if errRollback != nil {
+				return nil, errRollback
+			}
+			return nil, err
+		}
+
+		externalOutput := inout.ExternalOutput{}
+		externalOutput.ExternalID = externalInput.ExternalID
+		externalOutput.ShortURL = human.GetFullShortURL(&shortcut)
+
+		result = append(result, externalOutput)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

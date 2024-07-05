@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"shortener/internal/app/entity"
+	"shortener/internal/app/handler/inout"
+	"shortener/internal/app/human"
 	"shortener/internal/app/random"
 )
 
@@ -46,4 +48,26 @@ func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL strin
 	r.Shortcuts[shortcut.ShortURL] = shortcut
 
 	return &shortcut, nil
+}
+
+func (r *MemoryRepository) CreateBatch(ctx context.Context, batchInput inout.ExternalBatchInput) (result inout.ExternalBatchOutput, err error) {
+	//нормальное поведение
+	if len(batchInput) == 0 {
+		return result, nil
+	}
+
+	for _, input := range batchInput {
+		shortcut, err := r.CreateShortcut(ctx, input.OriginalURL)
+		if err != nil {
+			return nil, err
+		}
+
+		externalOutput := inout.ExternalOutput{}
+		externalOutput.ExternalID = input.ExternalID
+		externalOutput.ShortURL = human.GetFullShortURL(shortcut)
+
+		result = append(result, externalOutput)
+	}
+
+	return result, nil
 }

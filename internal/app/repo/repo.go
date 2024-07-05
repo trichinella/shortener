@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
+	"shortener/internal/app/handler/inout"
 )
 
 // Repository Репозиторий с данными
 type Repository interface {
 	GetShortcut(ctx context.Context, shortURL string) (*entity.Shortcut, error)
 	CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error)
+	CreateBatch(ctx context.Context, batchInput inout.ExternalBatchInput) (inout.ExternalBatchOutput, error)
 }
 
 // GetRepo выбор репозитория

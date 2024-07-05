@@ -36,9 +36,10 @@ func (s *CustomServer) Run() {
 }
 
 func fillHandler(router chi.Router, repo repo.Repository, db *sql.DB) {
-	router.Get(`/{shortURL}`, handler.GetLinkPage(repo))
-	router.Post(`/api/shorten`, handler.CreateLinkPageJSON(repo))
-	router.Post(`/`, handler.CreateLinkPage(repo))
+	router.Get(`/{shortURL}`, handler.GetShortcutPage(repo))
+	router.Post(`/api/shorten`, handler.CreateShortcutJSON(repo))
+	router.Post(`/api/shorten/batch`, handler.CreateShortcutBatchJSON(repo))
+	router.Post(`/`, handler.CreateShortcutPlain(repo))
 	router.Get(`/ping`, handler.PingDataBase(db))
 }
 

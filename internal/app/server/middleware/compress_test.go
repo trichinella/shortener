@@ -17,8 +17,8 @@ func TestCompress(t *testing.T) {
 	Router := chi.NewRouter()
 	Router.Use(Compress())
 	repository := repo.CreateMemoryRepository()
-	Router.Post(`/api/shorten`, handler.CreateLinkPageJSON(repository))
-	Router.Post(`/`, handler.CreateLinkPage(repository))
+	Router.Post(`/api/shorten`, handler.CreateShortcutJSON(repository))
+	Router.Post(`/`, handler.CreateShortcutPlain(repository))
 	srv := httptest.NewServer(Router)
 	defer srv.Close()
 

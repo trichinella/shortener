@@ -14,10 +14,10 @@ import (
 	"testing"
 )
 
-func TestCreateLinkPage(t *testing.T) {
+func TestCreateShortcutPlain(t *testing.T) {
 	s := repo.CreateMemoryRepository()
 	router := chi.NewRouter()
-	router.Post(`/`, CreateLinkPage(s))
+	router.Post(`/`, CreateShortcutPlain(s))
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
@@ -96,7 +96,7 @@ func TestCreateLinkPage(t *testing.T) {
 	}
 }
 
-func TestCreateLinkPageJSON(t *testing.T) {
+func TestCreateShortcutJSON(t *testing.T) {
 
 	type want struct {
 		code        int
@@ -166,7 +166,7 @@ func TestCreateLinkPageJSON(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, tt.target, strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
 			s := repo.CreateMemoryRepository()
-			CreateLinkPageJSON(s)(w, req)
+			CreateShortcutJSON(s)(w, req)
 			res := w.Result()
 
 			defer func() {

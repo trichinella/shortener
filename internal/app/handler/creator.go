@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"github.com/mailru/easyjson"
 	"net/http"
+	"shortener/internal/app/handler/inout"
 	"shortener/internal/app/human"
 	"shortener/internal/app/repo"
 )
 
-// CreateLinkPage Страница создания ссылки
-func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
+// CreateShortcutPlain Страница создания ссылки
+func CreateShortcutPlain(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, ok := handleCreateLinkBody(w, r)
 		if !ok {
@@ -31,15 +32,15 @@ func CreateLinkPage(repository repo.Repository) http.HandlerFunc {
 	}
 }
 
-// CreateLinkPageJSON Страница создания ссылки в формате JSON
-func CreateLinkPageJSON(repository repo.Repository) http.HandlerFunc {
+// CreateShortcutJSON Страница создания ссылки в формате JSON
+func CreateShortcutJSON(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, ok := handleCreateLinkBody(w, r)
 		if !ok {
 			return
 		}
 
-		inputURL := &InputURL{}
+		inputURL := &inout.InputURL{}
 		err := easyjson.Unmarshal(body, inputURL)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)
@@ -57,8 +58,50 @@ func CreateLinkPageJSON(repository repo.Repository) http.HandlerFunc {
 			return
 		}
 
-		outputURL := &OutputURL{Result: human.GetFullShortURL(shortcut)}
+		outputURL := &inout.OutputURL{Result: human.GetFullShortURL(shortcut)}
 		rawBytes, err := easyjson.Marshal(outputURL)
+		if err != nil {
+			BadRequest(err, http.StatusBadRequest)(w, r)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, err = w.Write(rawBytes)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
+// CreateShortcutBatchJSON Страница создания ссылки батчем в формате JSON
+func CreateShortcutBatchJSON(repository repo.Repository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, ok := handleCreateLinkBody(w, r)
+		if !ok {
+			return
+		}
+
+		externalBatchInput := inout.ExternalBatchInput{}
+		err := easyjson.Unmarshal(body, &externalBatchInput)
+		if err != nil {
+			BadRequest(err, http.StatusBadRequest)(w, r)
+			return
+		}
+
+		if len(externalBatchInput) == 0 {
+			BadRequest(fmt.Errorf("batch is empty"), http.StatusBadRequest)(w, r)
+			return
+		}
+
+		externalBatchOutput, err := repository.CreateBatch(r.Context(), externalBatchInput)
+		if err != nil {
+			BadRequest(err, http.StatusBadRequest)(w, r)
+			return
+		}
+
+		rawBytes, err := easyjson.Marshal(externalBatchOutput)
 		if err != nil {
 			BadRequest(err, http.StatusBadRequest)(w, r)
 			return
@@ -87,12 +130,4 @@ func handleCreateLinkBody(w http.ResponseWriter, r *http.Request) ([]byte, bool)
 	}
 
 	return body, true
-}
-
-type InputURL struct {
-	URL string `json:"url"`
-}
-
-type OutputURL struct {
-	Result string `json:"result"`
 }

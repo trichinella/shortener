@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
+	"shortener/internal/app/handler/inout"
 	"shortener/internal/app/human"
 	"strings"
 	"testing"
@@ -183,6 +184,80 @@ func TestMemoryRepository_HasShortcut(t *testing.T) {
 
 			got := HasShortcut(context.Background(), &r, tt.hash)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestMemoryRepository_CreateBatch(t *testing.T) {
+	type fields struct {
+		Shortcuts map[string]entity.Shortcut
+	}
+	type args struct {
+		batchInput inout.ExternalBatchInput
+	}
+	tests := []struct {
+		name      string
+		fields    fields
+		args      args
+		wantCount int
+	}{
+		{
+			name: "1 в батче",
+			fields: fields{
+				map[string]entity.Shortcut{},
+			},
+			args: args{
+				batchInput: []inout.ExternalInput{
+					{ExternalID: "test", OriginalURL: "http://ya.ru"},
+				},
+			},
+			wantCount: 1,
+		},
+		{
+			name: "3 в батче",
+			fields: fields{
+				map[string]entity.Shortcut{},
+			},
+			args: args{
+				batchInput: []inout.ExternalInput{
+					{ExternalID: "test", OriginalURL: "http://ya.ru"},
+					{ExternalID: "test2", OriginalURL: "http://ya1.ru"},
+					{ExternalID: "test3", OriginalURL: "http://ya2.ru"},
+				},
+			},
+			wantCount: 3,
+		},
+		{
+			name: "0 в батче",
+			fields: fields{
+				map[string]entity.Shortcut{},
+			},
+			args: args{
+				batchInput: []inout.ExternalInput{},
+			},
+			wantCount: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &MemoryRepository{
+				Shortcuts: tt.fields.Shortcuts,
+			}
+			gotResult, err := r.CreateBatch(context.Background(), tt.args.batchInput)
+
+			require.Len(t, r.Shortcuts, tt.wantCount)
+			require.Len(t, gotResult, tt.wantCount)
+			require.NoError(t, err)
+
+			for _, itemResult := range gotResult {
+				has := false
+				for _, itemInput := range tt.args.batchInput {
+					if itemInput.ExternalID == itemResult.ExternalID {
+						has = true
+					}
+				}
+				require.True(t, has)
+			}
 		})
 	}
 }

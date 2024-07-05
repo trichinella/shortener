@@ -14,10 +14,10 @@ import (
 	"testing"
 )
 
-func TestGetLinkPage(t *testing.T) {
+func TestGetShortcutPage(t *testing.T) {
 	s := repo.CreateMemoryRepository()
 	router := chi.NewRouter()
-	router.Get(`/{shortURL}`, GetLinkPage(s))
+	router.Get(`/{shortURL}`, GetShortcutPage(s))
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
