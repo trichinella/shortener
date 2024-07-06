@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"github.com/mailru/easyjson"
 	"net/http"
@@ -18,16 +19,23 @@ func CreateShortcutPlain(repository repo.Repository) http.HandlerFunc {
 		}
 
 		shortcut, err := repository.CreateShortcut(r.Context(), string(body))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		var duplicateShortcutErr *repo.DuplicateShortcutError
+		if err != nil && !errors.As(err, &duplicateShortcutErr) {
+			BadRequest(err, http.StatusInternalServerError)(w, r)
+			return
 		}
 
 		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusCreated)
+		if duplicateShortcutErr == nil {
+			w.WriteHeader(http.StatusCreated)
+		} else {
+			w.WriteHeader(http.StatusConflict)
+		}
+
 		_, err = w.Write([]byte(human.GetFullShortURL(shortcut)))
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			BadRequest(err, http.StatusInternalServerError)(w, r)
 		}
 	}
 }
@@ -53,8 +61,9 @@ func CreateShortcutJSON(repository repo.Repository) http.HandlerFunc {
 		}
 
 		shortcut, err := repository.CreateShortcut(r.Context(), inputURL.URL)
-		if err != nil {
-			BadRequest(err, http.StatusBadRequest)(w, r)
+		var duplicateShortcutErr *repo.DuplicateShortcutError
+		if err != nil && !errors.As(err, &duplicateShortcutErr) {
+			BadRequest(err, http.StatusInternalServerError)(w, r)
 			return
 		}
 
@@ -66,11 +75,15 @@ func CreateShortcutJSON(repository repo.Repository) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		if duplicateShortcutErr == nil {
+			w.WriteHeader(http.StatusCreated)
+		} else {
+			w.WriteHeader(http.StatusConflict)
+		}
 		_, err = w.Write(rawBytes)
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			BadRequest(err, http.StatusInternalServerError)(w, r)
 		}
 	}
 }
@@ -112,7 +125,7 @@ func CreateShortcutBatchJSON(repository repo.Repository) http.HandlerFunc {
 		_, err = w.Write(rawBytes)
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			BadRequest(err, http.StatusInternalServerError)(w, r)
 		}
 	}
 }
@@ -120,7 +133,7 @@ func CreateShortcutBatchJSON(repository repo.Repository) http.HandlerFunc {
 func handleCreateLinkBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
 	body, err := GetBody(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		BadRequest(err, http.StatusInternalServerError)(w, r)
 		return nil, false
 	}
 

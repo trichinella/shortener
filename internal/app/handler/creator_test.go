@@ -46,7 +46,7 @@ func TestCreateShortcutPlain(t *testing.T) {
 			body:        strings.NewReader("http://ya.ru"),
 			contentType: "text/plain",
 			want: want{
-				code:        201,
+				code:        409,
 				contentType: "text/plain",
 			},
 		},
@@ -86,7 +86,7 @@ func TestCreateShortcutPlain(t *testing.T) {
 			assert.Equal(t, test.want.code, resp.StatusCode)
 			assert.Equal(t, test.want.contentType, resp.Header.Get("Content-Type"))
 
-			if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+			if (resp.StatusCode >= 200 && resp.StatusCode <= 299) || resp.StatusCode == 409 {
 				// получаем и проверяем тело запроса
 				assert.Equal(t, true, strings.HasPrefix(respBodyString, test.want.response))
 			} else {
@@ -97,7 +97,6 @@ func TestCreateShortcutPlain(t *testing.T) {
 }
 
 func TestCreateShortcutJSON(t *testing.T) {
-
 	type want struct {
 		code        int
 		response    string
@@ -115,6 +114,15 @@ func TestCreateShortcutJSON(t *testing.T) {
 			body:   "{\"url\":\"http://ya.ru\"}",
 			want: want{
 				code:        201,
+				contentType: "application/json",
+			},
+		},
+		{
+			name:   "Same request",
+			target: "/api/shorten",
+			body:   "{\"url\":\"http://ya.ru\"}",
+			want: want{
+				code:        409,
 				contentType: "application/json",
 			},
 		},
@@ -161,11 +169,12 @@ func TestCreateShortcutJSON(t *testing.T) {
 			},
 		},
 	}
+	s := repo.CreateMemoryRepository()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, tt.target, strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			s := repo.CreateMemoryRepository()
+
 			CreateShortcutJSON(s)(w, req)
 			res := w.Result()
 

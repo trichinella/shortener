@@ -3,11 +3,14 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
@@ -59,19 +62,41 @@ func execMigrations() {
 	}
 }
 
-// GetShortcut Получить сокращение на основе краткого URL
-func (r *PostgresRepository) GetShortcut(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
+// GetShortcutByShortURL Получить сокращение на основе краткого URL
+func (r *PostgresRepository) GetShortcutByShortURL(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
 	childCtx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
 
 	var shortcut entity.Shortcut
 	row := r.DB.QueryRowContext(childCtx,
-		"SELECT s.short_url, s.original_url, s.uuid FROM public.shortcuts s WHERE s.short_url = $1",
+		"SELECT s.uuid, s.original_url, s.short_url, s.created_date FROM public.shortcuts s WHERE s.short_url = $1",
 		shortURL)
-	err := row.Scan(&shortcut.ShortURL, &shortcut.OriginalURL, &shortcut.ID)
+	err := row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("unknown short url")
+		}
+
+		return nil, err
+	}
+
+	return &shortcut, nil
+}
+
+// GetShortcutByOriginalURL Получить сокращение на основе оригинального URL
+func (r *PostgresRepository) GetShortcutByOriginalURL(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
+	childCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+
+	var shortcut entity.Shortcut
+	row := r.DB.QueryRowContext(childCtx,
+		"SELECT s.uuid, s.original_url, s.short_url, s.created_date FROM public.shortcuts s WHERE s.original_url = $1",
+		originalURL)
+	err := row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			//это штатная ситуация
+			return nil, nil
 		}
 
 		return nil, err
@@ -105,9 +130,28 @@ func (r *PostgresRepository) CreateShortcut(ctx context.Context, originalURL str
 	childCtx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
 
-	_, err = r.DB.ExecContext(childCtx,
-		"INSERT INTO public.shortcuts (uuid, original_url, short_url)  VALUES ($1, $2, $3)",
+	row := r.DB.QueryRowContext(childCtx,
+		`INSERT INTO public.shortcuts (uuid, original_url, short_url) VALUES ($1, $2, $3)
+	returning uuid,
+	original_url,
+	short_url,
+	created_date
+`,
 		shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL)
+
+	err = row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate)
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgerrcode.UniqueViolation == pgErr.Code {
+			shortcut, errInternal := r.GetShortcutByOriginalURL(ctx, shortcut.OriginalURL)
+			if errInternal != nil {
+				return nil, errInternal
+			}
+
+			return shortcut, NewDuplicateShortcutError(err, shortcut)
+		}
+	}
 
 	if err != nil {
 		return nil, err

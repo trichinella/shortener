@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"shortener/internal/app/entity"
 	"shortener/internal/app/handler/inout"
 	"shortener/internal/app/human"
@@ -20,8 +21,8 @@ type MemoryRepository struct {
 	Shortcuts map[string]entity.Shortcut
 }
 
-// GetShortcut Получить сокращение на основе краткого URL
-func (r *MemoryRepository) GetShortcut(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
+// GetShortcutByShortURL Получить сокращение на основе краткого URL
+func (r *MemoryRepository) GetShortcutByShortURL(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
 	shortcut, ok := r.Shortcuts[shortURL]
 
 	if ok {
@@ -31,8 +32,25 @@ func (r *MemoryRepository) GetShortcut(ctx context.Context, shortURL string) (*e
 	return nil, fmt.Errorf("unknown short url")
 }
 
+// GetShortcutByOriginalURL Получить сокращение на основе краткого URL
+func (r *MemoryRepository) GetShortcutByOriginalURL(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
+	for _, shortcut := range r.Shortcuts {
+		if shortcut.OriginalURL == originalURL {
+			return &shortcut, nil
+		}
+	}
+
+	return nil, nil
+}
+
 // CreateShortcut Создать сокращение
 func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
+	shortcut, err := r.GetShortcutByOriginalURL(ctx, originalURL)
+
+	if shortcut != nil {
+		return shortcut, NewDuplicateShortcutError(err, shortcut)
+	}
+
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
@@ -41,13 +59,19 @@ func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL strin
 		}
 	}
 
-	shortcut := entity.Shortcut{
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+
+	shortcut = &entity.Shortcut{
+		ID:          id,
 		OriginalURL: originalURL,
 		ShortURL:    hash,
 	}
-	r.Shortcuts[shortcut.ShortURL] = shortcut
+	r.Shortcuts[shortcut.ShortURL] = *shortcut
 
-	return &shortcut, nil
+	return shortcut, nil
 }
 
 func (r *MemoryRepository) CreateBatch(ctx context.Context, batchInput inout.ExternalBatchInput) (result inout.ExternalBatchOutput, err error) {

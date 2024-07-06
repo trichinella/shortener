@@ -78,7 +78,7 @@ func TestFileRepository_init(t *testing.T) {
 func TestFileRepository_CreateShortcut(t *testing.T) {
 	fileStoragePath := config.State().FileStoragePath
 
-	t.Setenv("FILE_STORAGE_PATH", os.TempDir()+"/q.json")
+	t.Setenv("FILE_STORAGE_PATH", os.TempDir()+"/q3.json")
 	t.Cleanup(func() {
 		err := os.Setenv("FILE_STORAGE_PATH", fileStoragePath)
 		if err != nil {
@@ -94,11 +94,12 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 		OriginalURL string
 	}
 	tests := []struct {
-		name      string
-		fields    fields
-		args      args
-		want      *entity.Shortcut
-		wantCount int
+		name          string
+		fields        fields
+		args          args
+		want          *entity.Shortcut
+		wantCount     int
+		wantLineCount int
 	}{
 		{
 			name: "Пример из 1 сокращения",
@@ -113,10 +114,11 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 			want: &entity.Shortcut{
 				OriginalURL: "http://ya.ru",
 			},
-			wantCount: 1,
+			wantCount:     1,
+			wantLineCount: 1,
 		},
 		{
-			name: "Пример из 3 сокращения",
+			name: "Пример из 3 сокращений",
 			fields: fields{
 				Shortcuts: map[string]entity.Shortcut{},
 			},
@@ -128,7 +130,8 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 			want: &entity.Shortcut{
 				OriginalURL: "http://habr.ru",
 			},
-			wantCount: 3,
+			wantCount:     3,
+			wantLineCount: 1,
 		},
 	}
 	for _, tt := range tests {
@@ -140,19 +143,22 @@ func TestFileRepository_CreateShortcut(t *testing.T) {
 			var gotShortcut *entity.Shortcut
 			for i := 0; i < tt.wantCount; i++ {
 				gotShortcut, err = r.CreateShortcut(context.Background(), tt.args.OriginalURL)
-				require.NoError(t, err)
+				if i == 0 {
+					require.NoError(t, err)
+				} else {
+					require.IsType(t, &DuplicateShortcutError{}, err)
+				}
 			}
 
-			defer func(name string) {
-				err := os.Remove(name)
-				require.NoError(t, err)
-			}(config.State().FileStoragePath)
 			file, err := os.OpenFile(config.State().FileStoragePath, os.O_RDONLY, 0666)
 			require.NoError(t, err)
 			cnt, _ := LineCounter(file)
 
-			assert.Equal(t, tt.wantCount, cnt)
+			assert.Equal(t, tt.wantLineCount, cnt)
 			assert.Equal(t, tt.want.OriginalURL, gotShortcut.OriginalURL, "Original URL and got URL must be equal")
+
+			err = os.Remove(config.State().FileStoragePath)
+			require.NoError(t, err)
 		})
 	}
 }

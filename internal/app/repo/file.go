@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/mailru/easyjson"
 	"os"
 	"shortener/internal/app/config"
@@ -32,8 +33,8 @@ func CreateFileRepository() (*FileRepository, error) {
 	return fileRepo, nil
 }
 
-// GetShortcut Получить ссылку на основе URL
-func (r *FileRepository) GetShortcut(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
+// GetShortcutByShortURL Получить ссылку на основе URL
+func (r *FileRepository) GetShortcutByShortURL(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
 	shortcut, ok := r.Shortcuts[shortURL]
 
 	if ok {
@@ -43,8 +44,25 @@ func (r *FileRepository) GetShortcut(ctx context.Context, shortURL string) (*ent
 	return nil, fmt.Errorf("unknown short url")
 }
 
+// GetShortcutByOriginalURL Получить ссылку на основе URL
+func (r *FileRepository) GetShortcutByOriginalURL(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
+	for _, shortcut := range r.Shortcuts {
+		if shortcut.OriginalURL == originalURL {
+			return &shortcut, nil
+		}
+	}
+
+	return nil, nil
+}
+
 // CreateShortcut Создать ссылку - пока будем хранить в мапе
 func (r *FileRepository) CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
+	shortcut, err := r.GetShortcutByOriginalURL(ctx, originalURL)
+
+	if shortcut != nil {
+		return shortcut, NewDuplicateShortcutError(err, shortcut)
+	}
+
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
@@ -53,7 +71,13 @@ func (r *FileRepository) CreateShortcut(ctx context.Context, originalURL string)
 		}
 	}
 
-	shortcut := entity.Shortcut{
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+
+	shortcut = &entity.Shortcut{
+		ID:          id,
 		OriginalURL: originalURL,
 		ShortURL:    hash,
 	}
@@ -83,9 +107,9 @@ func (r *FileRepository) CreateShortcut(ctx context.Context, originalURL string)
 		return nil, err
 	}
 
-	r.Shortcuts[hash] = shortcut
+	r.Shortcuts[hash] = *shortcut
 
-	return &shortcut, nil
+	return shortcut, nil
 }
 
 func (r *FileRepository) init() error {

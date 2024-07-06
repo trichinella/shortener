@@ -17,26 +17,35 @@ func TestMemoryRepository_CreateShortcut(t *testing.T) {
 	tests := []struct {
 		name string
 		link string
+		err  error
 	}{
 		{
 			name: "Пример #1",
 			link: "https://ya.ru",
+			err:  nil,
 		},
 		{
 			name: "Пример #2",
 			link: "https://lib.ru",
+			err:  nil,
 		},
 		{
 			name: "Пример #3",
 			link: "https://ya.ru",
+			err:  NewDuplicateShortcutError(nil, nil),
 		},
 	}
+	r := CreateMemoryRepository()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := CreateMemoryRepository()
 
 			testShortcut, err := r.CreateShortcut(context.Background(), tt.link)
-			require.NoError(t, err)
+
+			if tt.err != nil {
+				require.IsType(t, &DuplicateShortcutError{}, err)
+			} else {
+				require.NoError(t, err)
+			}
 
 			if !strings.HasPrefix(human.GetFullShortURL(testShortcut), config.State().DisplayLink) {
 				t.Errorf("Shortcut has incorrect prefix, got: %v,  want %v", human.GetFullShortURL(testShortcut), config.State().DisplayLink)
@@ -117,7 +126,7 @@ func TestMemoryRepository_GetShortcut(t *testing.T) {
 			s := MemoryRepository{
 				Shortcuts: tt.fields.Shortcuts,
 			}
-			testShortcut, err := s.GetShortcut(context.Background(), tt.hash)
+			testShortcut, err := s.GetShortcutByShortURL(context.Background(), tt.hash)
 
 			if tt.wantErr == nil {
 				require.NoError(t, tt.wantErr, err)

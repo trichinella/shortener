@@ -9,7 +9,7 @@ import (
 // GetShortcutPage Страница получения ссылки
 func GetShortcutPage(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		shortcut, err := repository.GetShortcut(r.Context(), chi.URLParam(r, "shortURL"))
+		shortcut, err := repository.GetShortcutByShortURL(r.Context(), chi.URLParam(r, "shortURL"))
 
 		if err != nil {
 			BadRequest(err, http.StatusNotFound)(w, r)

@@ -10,7 +10,8 @@ import (
 
 // Repository Репозиторий с данными
 type Repository interface {
-	GetShortcut(ctx context.Context, shortURL string) (*entity.Shortcut, error)
+	GetShortcutByShortURL(ctx context.Context, shortURL string) (*entity.Shortcut, error)
+	GetShortcutByOriginalURL(ctx context.Context, originalURL string) (*entity.Shortcut, error)
 	CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error)
 	CreateBatch(ctx context.Context, batchInput inout.ExternalBatchInput) (inout.ExternalBatchOutput, error)
 }
@@ -24,15 +25,15 @@ func GetRepo(db *sql.DB) (Repository, error) {
 		return CreatePostgresRepository(db), nil
 	}
 
-	if config.State().FileStoragePath == "" {
-		return CreateMemoryRepository(), nil
+	if config.State().FileStoragePath != "" {
+		return CreateFileRepository()
 	}
 
-	return CreateFileRepository()
+	return CreateMemoryRepository(), nil
 }
 
 func HasShortcut(ctx context.Context, r Repository, shortURL string) bool {
-	_, err := r.GetShortcut(ctx, shortURL)
+	_, err := r.GetShortcutByShortURL(ctx, shortURL)
 
 	return err == nil
 }
