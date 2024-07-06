@@ -44,7 +44,7 @@ func TestGetShortcutPage(t *testing.T) {
 		{
 			name:        "Error",
 			shortURL:    "itsnothabr",
-			originalURL: "http://ya.ru",
+			originalURL: "http://ya2.ru",
 			want: want{
 				code:     http.StatusNotFound,
 				url:      "http://habr.ru",
