@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"compress/gzip"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
+	"shortener/internal/app/logging"
 	"slices"
 	"strings"
 )
@@ -15,7 +15,7 @@ func init() {
 	compressableContentTypes = []string{"application/json", "text/html"}
 }
 
-func Compress(sugar *zap.SugaredLogger) func(next http.Handler) http.Handler {
+func Compress() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !slices.Contains(compressableContentTypes, r.Header.Get("Content-Type")) {
@@ -31,12 +31,12 @@ func Compress(sugar *zap.SugaredLogger) func(next http.Handler) http.Handler {
 			gz, err := getCompressor(w)
 			defer func() {
 				if err = gz.Close(); err != nil {
-					sugar.Error(err)
+					logging.Sugar.Error(err)
 				}
 			}()
 
 			if err != nil {
-				sugar.Error(err)
+				logging.Sugar.Error(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}

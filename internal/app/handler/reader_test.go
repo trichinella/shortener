@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
@@ -8,17 +9,15 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
 	"shortener/internal/app/repo"
 	"testing"
 )
 
-func TestGetLinkPage(t *testing.T) {
-	cfg := config.NewConfig()
-	s := repo.CreateMemoryRepository(cfg)
+func TestGetShortcutPage(t *testing.T) {
+	s := repo.CreateMemoryRepository()
 	router := chi.NewRouter()
-	router.Get(`/{shortURL}`, GetLinkPage(s))
+	router.Get(`/{shortURL}`, GetShortcutPage(s))
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
@@ -45,7 +44,7 @@ func TestGetLinkPage(t *testing.T) {
 		{
 			name:        "Error",
 			shortURL:    "itsnothabr",
-			originalURL: "http://ya.ru",
+			originalURL: "http://ya2.ru",
 			want: want{
 				code:     http.StatusNotFound,
 				url:      "http://habr.ru",
@@ -56,7 +55,7 @@ func TestGetLinkPage(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			shortcut, err := s.CreateShortcut(test.originalURL)
+			shortcut, err := s.CreateShortcut(context.Background(), test.originalURL)
 			require.NoError(t, err)
 
 			hash := shortcut.ShortURL

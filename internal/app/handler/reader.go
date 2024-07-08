@@ -6,10 +6,10 @@ import (
 	"shortener/internal/app/repo"
 )
 
-// GetLinkPage Страница получения ссылки
-func GetLinkPage(repository repo.Repository) http.HandlerFunc {
+// GetShortcutPage Страница получения ссылки
+func GetShortcutPage(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		shortcut, err := repository.GetShortcut(chi.URLParam(r, "shortURL"))
+		shortcut, err := repository.GetShortcutByShortURL(r.Context(), chi.URLParam(r, "shortURL"))
 
 		if err != nil {
 			BadRequest(err, http.StatusNotFound)(w, r)

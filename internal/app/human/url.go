@@ -5,6 +5,6 @@ import (
 	"shortener/internal/app/entity"
 )
 
-func GetFullShortURL(cfg *config.MainConfig, shortcut *entity.Shortcut) string {
-	return cfg.DisplayLink + "/" + shortcut.ShortURL
+func GetFullShortURL(shortcut *entity.Shortcut) string {
+	return config.State().DisplayLink + "/" + shortcut.ShortURL
 }

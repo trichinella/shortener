@@ -1,27 +1,28 @@
 package repo
 
 import (
+	"context"
 	"fmt"
-	"shortener/internal/app/config"
+	"github.com/google/uuid"
 	"shortener/internal/app/entity"
+	"shortener/internal/app/handler/inout"
+	"shortener/internal/app/human"
 	"shortener/internal/app/random"
 )
 
-func CreateMemoryRepository(config *config.MainConfig) *MemoryRepository {
+func CreateMemoryRepository() *MemoryRepository {
 	return &MemoryRepository{
 		Shortcuts: map[string]entity.Shortcut{},
-		Config:    config,
 	}
 }
 
-// MemoryRepository Основная структура
+// MemoryRepository репозиторий на основе хранения в памяти
 type MemoryRepository struct {
 	Shortcuts map[string]entity.Shortcut
-	Config    *config.MainConfig
 }
 
-// GetShortcut Получить сокращение на основе краткого URL
-func (r *MemoryRepository) GetShortcut(shortURL string) (*entity.Shortcut, error) {
+// GetShortcutByShortURL Получить сокращение на основе краткого URL
+func (r *MemoryRepository) GetShortcutByShortURL(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
 	shortcut, ok := r.Shortcuts[shortURL]
 
 	if ok {
@@ -31,27 +32,66 @@ func (r *MemoryRepository) GetShortcut(shortURL string) (*entity.Shortcut, error
 	return nil, fmt.Errorf("unknown short url")
 }
 
-func (r *MemoryRepository) HasShortcut(shortURL string) bool {
-	_, err := r.GetShortcut(shortURL)
+// GetShortcutByOriginalURL Получить сокращение на основе краткого URL
+func (r *MemoryRepository) GetShortcutByOriginalURL(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
+	for _, shortcut := range r.Shortcuts {
+		if shortcut.OriginalURL == originalURL {
+			return &shortcut, nil
+		}
+	}
 
-	return err == nil
+	return nil, nil
 }
 
 // CreateShortcut Создать сокращение
-func (r *MemoryRepository) CreateShortcut(originalURL string) (*entity.Shortcut, error) {
+func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
+	shortcut, err := r.GetShortcutByOriginalURL(ctx, originalURL)
+
+	if shortcut != nil {
+		return shortcut, NewDuplicateShortcutError(err, shortcut)
+	}
+
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
-		if !r.HasShortcut(hash) {
+		if !HasShortcut(ctx, r, hash) {
 			break
 		}
 	}
 
-	shortcut := entity.Shortcut{
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+
+	shortcut = &entity.Shortcut{
+		ID:          id,
 		OriginalURL: originalURL,
 		ShortURL:    hash,
 	}
-	r.Shortcuts[shortcut.ShortURL] = shortcut
+	r.Shortcuts[shortcut.ShortURL] = *shortcut
 
-	return &shortcut, nil
+	return shortcut, nil
+}
+
+func (r *MemoryRepository) CreateBatch(ctx context.Context, batchInput inout.ExternalBatchInput) (result inout.ExternalBatchOutput, err error) {
+	//нормальное поведение
+	if len(batchInput) == 0 {
+		return result, nil
+	}
+
+	for _, input := range batchInput {
+		shortcut, err := r.CreateShortcut(ctx, input.OriginalURL)
+		if err != nil {
+			return nil, err
+		}
+
+		externalOutput := inout.ExternalOutput{}
+		externalOutput.ExternalID = input.ExternalID
+		externalOutput.ShortURL = human.GetFullShortURL(shortcut)
+
+		result = append(result, externalOutput)
+	}
+
+	return result, nil
 }

@@ -2,24 +2,27 @@ package repo
 
 import (
 	"bufio"
+	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/mailru/easyjson"
 	"os"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
+	"shortener/internal/app/handler/inout"
+	"shortener/internal/app/human"
+	"shortener/internal/app/logging"
 	"shortener/internal/app/random"
 )
 
-// FileRepository Основная структура
+// FileRepository репозиторий на основе хранения в файле
 type FileRepository struct {
 	Shortcuts map[string]entity.Shortcut
-	Config    *config.MainConfig
 }
 
-func CreateFileRepository(config *config.MainConfig) (*FileRepository, error) {
+func CreateFileRepository() (*FileRepository, error) {
 	fileRepo := &FileRepository{
 		Shortcuts: map[string]entity.Shortcut{},
-		Config:    config,
 	}
 
 	err := fileRepo.init()
@@ -30,8 +33,8 @@ func CreateFileRepository(config *config.MainConfig) (*FileRepository, error) {
 	return fileRepo, nil
 }
 
-// GetShortcut Получить ссылку на основе URL
-func (r *FileRepository) GetShortcut(shortURL string) (*entity.Shortcut, error) {
+// GetShortcutByShortURL Получить ссылку на основе URL
+func (r *FileRepository) GetShortcutByShortURL(ctx context.Context, shortURL string) (*entity.Shortcut, error) {
 	shortcut, ok := r.Shortcuts[shortURL]
 
 	if ok {
@@ -41,23 +44,40 @@ func (r *FileRepository) GetShortcut(shortURL string) (*entity.Shortcut, error) 
 	return nil, fmt.Errorf("unknown short url")
 }
 
-func (r *FileRepository) HasShortcut(shortURL string) bool {
-	_, err := r.GetShortcut(shortURL)
+// GetShortcutByOriginalURL Получить ссылку на основе URL
+func (r *FileRepository) GetShortcutByOriginalURL(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
+	for _, shortcut := range r.Shortcuts {
+		if shortcut.OriginalURL == originalURL {
+			return &shortcut, nil
+		}
+	}
 
-	return err == nil
+	return nil, nil
 }
 
 // CreateShortcut Создать ссылку - пока будем хранить в мапе
-func (r *FileRepository) CreateShortcut(originalURL string) (*entity.Shortcut, error) {
+func (r *FileRepository) CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error) {
+	shortcut, err := r.GetShortcutByOriginalURL(ctx, originalURL)
+
+	if shortcut != nil {
+		return shortcut, NewDuplicateShortcutError(err, shortcut)
+	}
+
 	var hash string
 	for {
 		hash = random.GenerateRandomString(7)
-		if !r.HasShortcut(hash) {
+		if !HasShortcut(ctx, r, hash) {
 			break
 		}
 	}
 
-	shortcut := entity.Shortcut{
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+
+	shortcut = &entity.Shortcut{
+		ID:          id,
 		OriginalURL: originalURL,
 		ShortURL:    hash,
 	}
@@ -70,7 +90,7 @@ func (r *FileRepository) CreateShortcut(originalURL string) (*entity.Shortcut, e
 
 	data = append(data, []byte("\n")...)
 
-	file, err := os.OpenFile(r.Config.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	file, err := os.OpenFile(config.State().FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +98,7 @@ func (r *FileRepository) CreateShortcut(originalURL string) (*entity.Shortcut, e
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			panic(err)
+			logging.Sugar.Fatal(err)
 		}
 	}()
 
@@ -87,13 +107,13 @@ func (r *FileRepository) CreateShortcut(originalURL string) (*entity.Shortcut, e
 		return nil, err
 	}
 
-	r.Shortcuts[hash] = shortcut
+	r.Shortcuts[hash] = *shortcut
 
-	return &shortcut, nil
+	return shortcut, nil
 }
 
 func (r *FileRepository) init() error {
-	file, err := os.OpenFile(r.Config.FileStoragePath, os.O_RDONLY|os.O_CREATE|os.O_APPEND, 0666)
+	file, err := os.OpenFile(config.State().FileStoragePath, os.O_RDONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return err
 	}
@@ -101,7 +121,7 @@ func (r *FileRepository) init() error {
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			panic(err)
+			logging.Sugar.Fatal(err)
 		}
 	}()
 
@@ -120,4 +140,26 @@ func (r *FileRepository) init() error {
 	}
 
 	return nil
+}
+
+func (r *FileRepository) CreateBatch(ctx context.Context, batchInput inout.ExternalBatchInput) (result inout.ExternalBatchOutput, err error) {
+	//нормальное поведение
+	if len(batchInput) == 0 {
+		return result, nil
+	}
+
+	for _, input := range batchInput {
+		shortcut, err := r.CreateShortcut(ctx, input.OriginalURL)
+		if err != nil {
+			return nil, err
+		}
+
+		externalOutput := inout.ExternalOutput{}
+		externalOutput.ExternalID = input.ExternalID
+		externalOutput.ShortURL = human.GetFullShortURL(shortcut)
+
+		result = append(result, externalOutput)
+	}
+
+	return result, nil
 }

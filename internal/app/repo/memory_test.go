@@ -1,62 +1,54 @@
 package repo
 
 import (
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
+	"shortener/internal/app/handler/inout"
 	"shortener/internal/app/human"
 	"strings"
 	"testing"
 )
 
 func TestMemoryRepository_CreateShortcut(t *testing.T) {
-	type args struct {
-		host string
-	}
 	tests := []struct {
 		name string
-		args args
 		link string
-		want string
+		err  error
 	}{
 		{
 			name: "Пример #1",
-			args: args{
-				host: "http://localhost:123",
-			},
 			link: "https://ya.ru",
-			want: "http://localhost:123",
+			err:  nil,
 		},
 		{
 			name: "Пример #2",
-			args: args{
-				host: "http://example.site:443",
-			},
 			link: "https://lib.ru",
-			want: "http://example.site:443",
+			err:  nil,
 		},
 		{
 			name: "Пример #3",
-			args: args{
-				host: "http://habr.ru:8080",
-			},
 			link: "https://ya.ru",
-			want: "http://habr.ru:8080",
+			err:  NewDuplicateShortcutError(nil, nil),
 		},
 	}
+	r := CreateMemoryRepository()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.NewConfig()
-			cfg.DisplayLink = tt.args.host
-			r := CreateMemoryRepository(cfg)
 
-			testShortcut, err := r.CreateShortcut(tt.link)
-			require.NoError(t, err)
+			testShortcut, err := r.CreateShortcut(context.Background(), tt.link)
 
-			if !strings.HasPrefix(human.GetFullShortURL(cfg, testShortcut), tt.want) {
-				t.Errorf("Shortcut has incorrect prefix, got: %v,  want %v", human.GetFullShortURL(cfg, testShortcut), tt.want)
+			if tt.err != nil {
+				require.IsType(t, &DuplicateShortcutError{}, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			if !strings.HasPrefix(human.GetFullShortURL(testShortcut), config.State().DisplayLink) {
+				t.Errorf("Shortcut has incorrect prefix, got: %v,  want %v", human.GetFullShortURL(testShortcut), config.State().DisplayLink)
 			}
 		})
 	}
@@ -131,12 +123,10 @@ func TestMemoryRepository_GetShortcut(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.NewConfig()
 			s := MemoryRepository{
 				Shortcuts: tt.fields.Shortcuts,
-				Config:    cfg,
 			}
-			testShortcut, err := s.GetShortcut(tt.hash)
+			testShortcut, err := s.GetShortcutByShortURL(context.Background(), tt.hash)
 
 			if tt.wantErr == nil {
 				require.NoError(t, tt.wantErr, err)
@@ -197,12 +187,86 @@ func TestMemoryRepository_HasShortcut(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := MemoryRepository{
+			r := MemoryRepository{
 				Shortcuts: tt.fields.Shortcuts,
 			}
 
-			got := s.HasShortcut(tt.hash)
+			got := HasShortcut(context.Background(), &r, tt.hash)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestMemoryRepository_CreateBatch(t *testing.T) {
+	type fields struct {
+		Shortcuts map[string]entity.Shortcut
+	}
+	type args struct {
+		batchInput inout.ExternalBatchInput
+	}
+	tests := []struct {
+		name      string
+		fields    fields
+		args      args
+		wantCount int
+	}{
+		{
+			name: "1 в батче",
+			fields: fields{
+				map[string]entity.Shortcut{},
+			},
+			args: args{
+				batchInput: []inout.ExternalInput{
+					{ExternalID: "test", OriginalURL: "http://ya.ru"},
+				},
+			},
+			wantCount: 1,
+		},
+		{
+			name: "3 в батче",
+			fields: fields{
+				map[string]entity.Shortcut{},
+			},
+			args: args{
+				batchInput: []inout.ExternalInput{
+					{ExternalID: "test", OriginalURL: "http://ya.ru"},
+					{ExternalID: "test2", OriginalURL: "http://ya1.ru"},
+					{ExternalID: "test3", OriginalURL: "http://ya2.ru"},
+				},
+			},
+			wantCount: 3,
+		},
+		{
+			name: "0 в батче",
+			fields: fields{
+				map[string]entity.Shortcut{},
+			},
+			args: args{
+				batchInput: []inout.ExternalInput{},
+			},
+			wantCount: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &MemoryRepository{
+				Shortcuts: tt.fields.Shortcuts,
+			}
+			gotResult, err := r.CreateBatch(context.Background(), tt.args.batchInput)
+
+			require.Len(t, r.Shortcuts, tt.wantCount)
+			require.Len(t, gotResult, tt.wantCount)
+			require.NoError(t, err)
+
+			for _, itemResult := range gotResult {
+				has := false
+				for _, itemInput := range tt.args.batchInput {
+					if itemInput.ExternalID == itemResult.ExternalID {
+						has = true
+					}
+				}
+				require.True(t, has)
+			}
 		})
 	}
 }

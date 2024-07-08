@@ -5,11 +5,9 @@ import (
 	"compress/gzip"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"shortener/internal/app/config"
 	"shortener/internal/app/handler"
 	"shortener/internal/app/repo"
 	"testing"
@@ -17,12 +15,10 @@ import (
 
 func TestCompress(t *testing.T) {
 	Router := chi.NewRouter()
-	logger, _ := zap.NewDevelopment()
-	Router.Use(Compress(logger.Sugar()))
-	cfg := config.NewConfig()
-	repository := repo.CreateMemoryRepository(cfg)
-	Router.Post(`/api/shorten`, handler.CreateLinkPageJSON(repository, cfg))
-	Router.Post(`/`, handler.CreateLinkPage(repository, cfg))
+	Router.Use(Compress())
+	repository := repo.CreateMemoryRepository()
+	Router.Post(`/api/shorten`, handler.CreateShortcutJSON(repository))
+	Router.Post(`/`, handler.CreateShortcutPlain(repository))
 	srv := httptest.NewServer(Router)
 	defer srv.Close()
 

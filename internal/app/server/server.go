@@ -1,48 +1,50 @@
 package server
 
 import (
+	"database/sql"
 	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
 	"net/http"
 	"shortener/internal/app/config"
 	"shortener/internal/app/handler"
+	"shortener/internal/app/logging"
 	"shortener/internal/app/repo"
 	"shortener/internal/app/server/middleware"
 )
 
 type CustomServer struct {
-	Config *config.MainConfig
-	Logger *zap.Logger
 	Router *chi.Mux
+	DB     *sql.DB
 }
 
 func (s *CustomServer) Run() {
-	mainRepo, err := repo.GetRepo(s.Config)
+	mainRepo, err := repo.GetRepo(s.DB)
+
 	if err != nil {
-		panic(err)
+		logging.Sugar.Fatal(err)
 	}
 
 	s.Router = chi.NewRouter()
-	s.Router.Use(middleware.Compress(s.Logger.Sugar()))
-	s.Router.Use(middleware.LogMiddleware(s.Logger.Sugar()))
-	fillHandler(s.Router, mainRepo, s.Config)
+	s.Router.Use(middleware.Compress())
+	s.Router.Use(middleware.LogMiddleware())
+	fillHandler(s.Router, mainRepo, s.DB)
 
-	s.Logger.Sugar().Infow("Listen and serve", "Host", s.Config.ServerHost)
-	err = http.ListenAndServe(s.Config.ServerHost, s.Router)
+	logging.Sugar.Infow("Listen and serve", "Host", config.State().ServerHost)
+	err = http.ListenAndServe(config.State().ServerHost, s.Router)
 	if err != nil {
-		panic(err)
+		logging.Sugar.Fatal(err)
 	}
 }
 
-func fillHandler(router chi.Router, repo repo.Repository, cfg *config.MainConfig) {
-	router.Get(`/{shortURL}`, handler.GetLinkPage(repo))
-	router.Post(`/api/shorten`, handler.CreateLinkPageJSON(repo, cfg))
-	router.Post(`/`, handler.CreateLinkPage(repo, cfg))
+func fillHandler(router chi.Router, repo repo.Repository, db *sql.DB) {
+	router.Get(`/{shortURL}`, handler.GetShortcutPage(repo))
+	router.Post(`/api/shorten`, handler.CreateShortcutJSON(repo))
+	router.Post(`/api/shorten/batch`, handler.CreateShortcutBatchJSON(repo))
+	router.Post(`/`, handler.CreateShortcutPlain(repo))
+	router.Get(`/ping`, handler.PingDataBase(db))
 }
 
-func CreateServer(config *config.MainConfig, logger *zap.Logger) CustomServer {
+func CreateServer(db *sql.DB) CustomServer {
 	return CustomServer{
-		Config: config,
-		Logger: logger,
+		DB: db,
 	}
 }
