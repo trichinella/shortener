@@ -13,3 +13,11 @@ type ExternalOutput struct {
 
 //easyjson:json
 type ExternalBatchOutput []ExternalOutput
+
+type BaseShortcut struct {
+	OriginalURL string `json:"original_url"`
+	ShortURL    string `json:"short_url"`
+}
+
+//easyjson:json
+type BaseShortcutList []BaseShortcut

@@ -48,6 +48,7 @@ func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL strin
 	shortcut, err := r.GetShortcutByOriginalURL(ctx, originalURL)
 
 	if shortcut != nil {
+
 		return shortcut, NewDuplicateShortcutError(err, shortcut)
 	}
 
@@ -64,10 +65,16 @@ func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL strin
 		return nil, err
 	}
 
+	userID, ok := ctx.Value("UserID").(uuid.UUID)
+	if !ok {
+		userID = uuid.Nil
+	}
+
 	shortcut = &entity.Shortcut{
 		ID:          id,
 		OriginalURL: originalURL,
 		ShortURL:    hash,
+		UserID:      userID,
 	}
 	r.Shortcuts[shortcut.ShortURL] = *shortcut
 
@@ -94,4 +101,15 @@ func (r *MemoryRepository) CreateBatch(ctx context.Context, batchInput inout.Ext
 	}
 
 	return result, nil
+}
+
+func (r *MemoryRepository) GetShortcutsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Shortcut, error) {
+	var shortcuts []entity.Shortcut
+	for _, shortcut := range r.Shortcuts {
+		if shortcut.UserID == userID {
+			shortcuts = append(shortcuts, shortcut)
+		}
+	}
+
+	return shortcuts, nil
 }

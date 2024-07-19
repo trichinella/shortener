@@ -163,3 +163,14 @@ func (r *FileRepository) CreateBatch(ctx context.Context, batchInput inout.Exter
 
 	return result, nil
 }
+
+func (r *FileRepository) GetShortcutsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Shortcut, error) {
+	var shortcuts []entity.Shortcut
+	for _, shortcut := range r.Shortcuts {
+		if shortcut.UserID == userID {
+			shortcuts = append(shortcuts, shortcut)
+		}
+	}
+
+	return shortcuts, nil
+}

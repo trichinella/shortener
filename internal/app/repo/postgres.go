@@ -131,13 +131,13 @@ func (r *PostgresRepository) CreateShortcut(ctx context.Context, originalURL str
 	defer cancel()
 
 	row := r.DB.QueryRowContext(childCtx,
-		`INSERT INTO public.shortcuts (uuid, original_url, short_url) VALUES ($1, $2, $3)
+		`INSERT INTO public.shortcuts (uuid, original_url, short_url, user_id) VALUES ($1, $2, $3, $4)
 	returning uuid,
 	original_url,
 	short_url,
 	created_date
 `,
-		shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL)
+		shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value("UserID"))
 
 	err = row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate)
 
@@ -191,8 +191,8 @@ func (r *PostgresRepository) CreateBatch(ctx context.Context, batchInput inout.E
 		}
 
 		_, err = tx.ExecContext(ctx,
-			"INSERT INTO public.shortcuts (uuid, original_url, short_url) VALUES ($1, $2, $3)",
-			shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL)
+			"INSERT INTO public.shortcuts (uuid, original_url, short_url, user_id) VALUES ($1, $2, $3, $4)",
+			shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value("UserID"))
 
 		if err != nil {
 			errRollback := tx.Rollback()
@@ -215,4 +215,38 @@ func (r *PostgresRepository) CreateBatch(ctx context.Context, batchInput inout.E
 	}
 
 	return result, nil
+}
+
+func (r *PostgresRepository) GetShortcutsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Shortcut, error) {
+	childCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+
+	var shortcuts []entity.Shortcut
+	rows, err := r.DB.QueryContext(childCtx,
+		"SELECT s.uuid, s.original_url, s.short_url, s.created_date FROM public.shortcuts s WHERE s.user_id = $1",
+		userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			logging.Sugar.Fatalf("Can not close rows: %s", err.Error())
+		}
+	}(rows)
+
+	// пробегаем по всем записям
+	for rows.Next() {
+		var shortcut entity.Shortcut
+		err := rows.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate)
+		if err != nil {
+			return nil, err
+		}
+
+		shortcuts = append(shortcuts, shortcut)
+	}
+
+	return shortcuts, nil
 }

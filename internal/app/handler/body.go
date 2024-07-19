@@ -2,6 +2,7 @@ package handler
 
 import (
 	"compress/gzip"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -18,7 +19,7 @@ func GetBody(r *http.Request) ([]byte, error) {
 func GetCompressedBody(r *http.Request) ([]byte, error) {
 	gz, err := gzip.NewReader(r.Body)
 	if err != nil {
-		if err == io.EOF || err == io.ErrUnexpectedEOF {
+		if errors.Is(err, io.EOF) {
 			return []byte{}, nil
 		}
 

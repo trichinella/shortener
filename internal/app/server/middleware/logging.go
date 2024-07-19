@@ -43,6 +43,7 @@ func LogMiddleware() func(next http.Handler) http.Handler {
 				"Execution time", time.Since(start),
 				"Code", lrw.ResponseData.statusCode,
 				"Size", lrw.ResponseData.size,
+				"UserID", r.Context().Value("UserID"),
 			)
 		})
 	}
