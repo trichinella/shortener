@@ -12,7 +12,7 @@ const TokenExp = time.Hour * 3
 
 type ContextKey string
 
-var ContextUserID = "UserID"
+var ContextUserID ContextKey = "UserID"
 
 type Claims struct {
 	jwt.RegisteredClaims
