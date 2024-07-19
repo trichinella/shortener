@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const TOKEN_EXP = time.Hour * 3
+const TokenExp = time.Hour * 3
 
 type Claims struct {
 	jwt.RegisteredClaims
@@ -21,7 +21,7 @@ func BuildJWTString() (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			// когда создан токен
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TOKEN_EXP)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExp)),
 		},
 		// собственное утверждение
 		UserID: userID,
