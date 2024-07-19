@@ -18,6 +18,7 @@ import (
 	"shortener/internal/app/human"
 	"shortener/internal/app/logging"
 	"shortener/internal/app/random"
+	"shortener/internal/app/service/authentification"
 	"time"
 )
 
@@ -137,7 +138,7 @@ func (r *PostgresRepository) CreateShortcut(ctx context.Context, originalURL str
 	short_url,
 	created_date
 `,
-		shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value("UserID"))
+		shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value(authentification.ContextUserID))
 
 	err = row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate)
 
@@ -192,7 +193,7 @@ func (r *PostgresRepository) CreateBatch(ctx context.Context, batchInput inout.E
 
 		_, err = tx.ExecContext(ctx,
 			"INSERT INTO public.shortcuts (uuid, original_url, short_url, user_id) VALUES ($1, $2, $3, $4)",
-			shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value("UserID"))
+			shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value(authentification.ContextUserID))
 
 		if err != nil {
 			errRollback := tx.Rollback()

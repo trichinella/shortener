@@ -8,6 +8,7 @@ import (
 	"shortener/internal/app/handler/inout"
 	"shortener/internal/app/human"
 	"shortener/internal/app/random"
+	"shortener/internal/app/service/authentification"
 )
 
 func CreateMemoryRepository() *MemoryRepository {
@@ -65,7 +66,7 @@ func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL strin
 		return nil, err
 	}
 
-	userID, ok := ctx.Value("UserID").(uuid.UUID)
+	userID, ok := ctx.Value(authentification.ContextUserID).(uuid.UUID)
 	if !ok {
 		userID = uuid.Nil
 	}

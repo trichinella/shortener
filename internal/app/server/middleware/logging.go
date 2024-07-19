@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"shortener/internal/app/logging"
+	"shortener/internal/app/service/authentification"
 	"time"
 )
 
@@ -43,7 +44,7 @@ func LogMiddleware() func(next http.Handler) http.Handler {
 				"Execution time", time.Since(start),
 				"Code", lrw.ResponseData.statusCode,
 				"Size", lrw.ResponseData.size,
-				"UserID", r.Context().Value("UserID"),
+				"UserID", r.Context().Value(authentification.ContextUserID),
 			)
 		})
 	}

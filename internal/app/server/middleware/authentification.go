@@ -44,7 +44,7 @@ func AuthMiddleware() func(next http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), "UserID", claims.UserID)
+			ctx := context.WithValue(r.Context(), authentification.ContextUserID, claims.UserID)
 			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)
@@ -73,7 +73,7 @@ func createNewToken(next http.Handler, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.WithValue(r.Context(), "UserID", claims.UserID)
+	ctx := context.WithValue(r.Context(), authentification.ContextUserID, claims.UserID)
 	r = r.WithContext(ctx)
 
 	next.ServeHTTP(w, r)

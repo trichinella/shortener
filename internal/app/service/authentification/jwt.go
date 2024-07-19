@@ -10,6 +10,10 @@ import (
 
 const TokenExp = time.Hour * 3
 
+type ContextKey string
+
+var ContextUserID = "UserID"
+
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID uuid.UUID

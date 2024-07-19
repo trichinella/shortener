@@ -7,6 +7,7 @@ import (
 	"github.com/mailru/easyjson"
 	"net/http"
 	"shortener/internal/app/repo"
+	"shortener/internal/app/service/authentification"
 	"shortener/internal/app/service/mapper"
 )
 
@@ -27,7 +28,7 @@ func GetShortcutPage(repository repo.Repository) http.HandlerFunc {
 // GetShortcutsByUser Страница получения ссылок пользователя
 func GetShortcutsByUser(repository repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := r.Context().Value("UserID").(uuid.UUID)
+		userID, ok := r.Context().Value(authentification.ContextUserID).(uuid.UUID)
 
 		if !ok {
 			BadRequest(fmt.Errorf("there is no User ID"), http.StatusUnauthorized)(w, r)
