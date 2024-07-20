@@ -5,6 +5,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"shortener/internal/app/config"
+	"strings"
 	"time"
 )
 
@@ -38,10 +39,11 @@ func BuildJWTString() (string, error) {
 	}
 
 	// возвращаем строку токена
-	return tokenString, nil
+	return "Bearer " + tokenString, nil
 }
 
 func GetClaims(tokenString string) (*Claims, error) {
+	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 	// создаём экземпляр структуры с утверждениями
 	claims := &Claims{}
 	// парсим из строки токена tokenString в структуру claims
