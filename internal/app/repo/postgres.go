@@ -226,6 +226,7 @@ func (r *PostgresRepository) GetShortcutsByUserID(ctx context.Context, userID uu
 	rows, err := r.DB.QueryContext(childCtx,
 		"SELECT s.uuid, s.original_url, s.short_url, s.created_date FROM public.shortcuts s WHERE s.user_id = $1",
 		userID)
+
 	if err != nil {
 		return nil, err
 	}
@@ -246,6 +247,11 @@ func (r *PostgresRepository) GetShortcutsByUserID(ctx context.Context, userID uu
 		}
 
 		shortcuts = append(shortcuts, shortcut)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
 	}
 
 	return shortcuts, nil
