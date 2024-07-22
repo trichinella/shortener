@@ -70,11 +70,11 @@ func (r *PostgresRepository) GetShortcutByShortURL(ctx context.Context, shortURL
 
 	var shortcut entity.Shortcut
 	row := r.DB.QueryRowContext(childCtx,
-		"SELECT s.uuid, s.original_url, s.short_url, s.created_date FROM public.shortcuts s WHERE s.short_url = $1",
+		"SELECT s.uuid, s.original_url, s.short_url, s.created_date, s.deleted_date FROM public.shortcuts s WHERE s.short_url = $1",
 		shortURL)
-	err := row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate)
+	err := row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate, &shortcut.DeletedDate)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("unknown short url")
 		}
 
@@ -91,11 +91,11 @@ func (r *PostgresRepository) GetShortcutByOriginalURL(ctx context.Context, origi
 
 	var shortcut entity.Shortcut
 	row := r.DB.QueryRowContext(childCtx,
-		"SELECT s.uuid, s.original_url, s.short_url, s.created_date FROM public.shortcuts s WHERE s.original_url = $1",
+		"SELECT s.uuid, s.original_url, s.short_url, s.created_date, s.deleted_date FROM public.shortcuts s WHERE s.original_url = $1",
 		originalURL)
-	err := row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate)
+	err := row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate, &shortcut.DeletedDate)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			//это штатная ситуация
 			return nil, nil
 		}
@@ -255,4 +255,15 @@ func (r *PostgresRepository) GetShortcutsByUserID(ctx context.Context, userID uu
 	}
 
 	return shortcuts, nil
+}
+
+func (r *PostgresRepository) DeleteList(ctx context.Context, userID uuid.UUID, list inout.ShortURLList) error {
+	childCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+
+	_, err := r.DB.ExecContext(childCtx,
+		`UPDATE public.shortcuts SET deleted_date = NOW() WHERE user_id = $1 AND short_url= ANY($2)`,
+		userID, list)
+
+	return err
 }

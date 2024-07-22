@@ -41,6 +41,7 @@ func fillHandler(router chi.Router, repo repo.Repository, db *sql.DB) {
 	router.Post(`/api/shorten`, handler.CreateShortcutJSON(repo))
 	router.Post(`/api/shorten/batch`, handler.CreateShortcutBatchJSON(repo))
 	router.Get(`/api/user/urls`, handler.GetShortcutsByUser(repo))
+	router.Delete(`/api/user/urls`, handler.DeleteUserURL(repo))
 	router.Post(`/`, handler.CreateShortcutPlain(repo))
 	router.Get(`/ping`, handler.PingDataBase(db))
 }

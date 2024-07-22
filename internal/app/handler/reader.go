@@ -21,6 +21,12 @@ func GetShortcutPage(repository repo.Repository) http.HandlerFunc {
 			return
 		}
 
+		fmt.Println("shortcut", shortcut)
+		if shortcut.DeletedDate != nil {
+			BadRequest(fmt.Errorf("shortcut is unavailable"), http.StatusGone)(w, r)
+			return
+		}
+
 		http.Redirect(w, r, shortcut.OriginalURL, http.StatusTemporaryRedirect)
 	}
 }
@@ -31,7 +37,7 @@ func GetShortcutsByUser(repository repo.Repository) http.HandlerFunc {
 		userID, ok := r.Context().Value(authentification.ContextUserID).(uuid.UUID)
 
 		if !ok {
-			BadRequest(fmt.Errorf("there is no User ID"), http.StatusUnauthorized)(w, r)
+			BadRequest(fmt.Errorf("there is no user ID"), http.StatusUnauthorized)(w, r)
 			return
 		}
 

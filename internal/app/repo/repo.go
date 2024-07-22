@@ -16,6 +16,7 @@ type Repository interface {
 	CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error)
 	CreateBatch(ctx context.Context, batchInput inout.ExternalBatchInput) (inout.ExternalBatchOutput, error)
 	GetShortcutsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Shortcut, error)
+	DeleteList(ctx context.Context, userID uuid.UUID, list inout.ShortURLList) error
 }
 
 // GetRepo выбор репозитория

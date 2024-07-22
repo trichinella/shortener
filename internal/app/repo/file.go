@@ -13,6 +13,8 @@ import (
 	"shortener/internal/app/human"
 	"shortener/internal/app/logging"
 	"shortener/internal/app/random"
+	"shortener/internal/app/service/authentification"
+	"time"
 )
 
 // FileRepository репозиторий на основе хранения в файле
@@ -76,10 +78,15 @@ func (r *FileRepository) CreateShortcut(ctx context.Context, originalURL string)
 		return nil, err
 	}
 
+	userID, ok := ctx.Value(authentification.ContextUserID).(uuid.UUID)
+	if !ok {
+		userID = uuid.Nil
+	}
 	shortcut = &entity.Shortcut{
 		ID:          id,
 		OriginalURL: originalURL,
 		ShortURL:    hash,
+		UserID:      userID,
 	}
 
 	data, err := easyjson.Marshal(shortcut)
@@ -173,4 +180,22 @@ func (r *FileRepository) GetShortcutsByUserID(ctx context.Context, userID uuid.U
 	}
 
 	return shortcuts, nil
+}
+
+func (r *FileRepository) DeleteList(ctx context.Context, userID uuid.UUID, list inout.ShortURLList) error {
+	for _, shortURL := range list {
+		shortcut, err := r.GetShortcutByShortURL(ctx, shortURL)
+		if err != nil {
+			continue
+		}
+		if userID != shortcut.UserID {
+			continue
+		}
+
+		now := time.Now()
+		shortcut.DeletedDate = &now
+		r.Shortcuts[shortURL] = *shortcut
+	}
+
+	return nil
 }

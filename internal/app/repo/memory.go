@@ -9,6 +9,7 @@ import (
 	"shortener/internal/app/human"
 	"shortener/internal/app/random"
 	"shortener/internal/app/service/authentification"
+	"time"
 )
 
 func CreateMemoryRepository() *MemoryRepository {
@@ -113,4 +114,22 @@ func (r *MemoryRepository) GetShortcutsByUserID(ctx context.Context, userID uuid
 	}
 
 	return shortcuts, nil
+}
+
+func (r *MemoryRepository) DeleteList(ctx context.Context, userID uuid.UUID, list inout.ShortURLList) error {
+	for _, shortURL := range list {
+		shortcut, err := r.GetShortcutByShortURL(ctx, shortURL)
+		if err != nil {
+			continue
+		}
+		if userID != shortcut.UserID {
+			continue
+		}
+
+		now := time.Now()
+		shortcut.DeletedDate = &now
+		r.Shortcuts[shortURL] = *shortcut
+	}
+
+	return nil
 }

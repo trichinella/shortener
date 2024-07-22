@@ -13,3 +13,6 @@ type ExternalInput struct {
 
 //easyjson:json
 type ExternalBatchInput []ExternalInput
+
+//easyjson:json
+type ShortURLList []string
