@@ -6,6 +6,7 @@ import (
 	"github.com/mailru/easyjson"
 	"net/http"
 	"shortener/internal/app/handler/inout"
+	"shortener/internal/app/logging"
 	"shortener/internal/app/repo"
 	"shortener/internal/app/service/authentification"
 )
@@ -31,11 +32,12 @@ func DeleteUserURL(repository repo.Repository) http.HandlerFunc {
 			return
 		}
 
-		err = repository.DeleteList(r.Context(), userID, deletingList)
-		if err != nil {
-			BadRequest(err, http.StatusInternalServerError)(w, r)
-			return
-		}
+		go func() {
+			err = repository.DeleteList(r.Context(), userID, deletingList)
+			if err != nil {
+				logging.Sugar.Error(fmt.Errorf("при удалении списка возникла ошибка %w", err))
+			}
+		}()
 
 		w.WriteHeader(http.StatusAccepted)
 	}

@@ -19,6 +19,7 @@ import (
 	"shortener/internal/app/logging"
 	"shortener/internal/app/random"
 	"shortener/internal/app/service/authentification"
+	"sync"
 	"time"
 )
 
@@ -34,7 +35,7 @@ func GetDB() *sql.DB {
 }
 
 type Pingable interface {
-	Ping() error
+	PingContext(ctx context.Context) error
 }
 
 // PostgresRepository репозиторий на основе хранения в БД postgres
@@ -58,7 +59,7 @@ func execMigrations() {
 	}
 
 	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		logging.Sugar.Fatal(err)
 	}
 }
@@ -69,10 +70,13 @@ func (r *PostgresRepository) GetShortcutByShortURL(ctx context.Context, shortURL
 	defer cancel()
 
 	var shortcut entity.Shortcut
-	row := r.DB.QueryRowContext(childCtx,
-		"SELECT s.uuid, s.original_url, s.short_url, s.created_date, s.deleted_date FROM public.shortcuts s WHERE s.short_url = $1",
-		shortURL)
-	err := row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate, &shortcut.DeletedDate)
+
+	stmt, err := getSelectStatementByShortURL(r.DB, childCtx)
+	if err != nil {
+		return nil, err
+	}
+	row := stmt.QueryRowContext(childCtx, shortURL)
+	err = row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate, &shortcut.DeletedDate)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("unknown short url")
@@ -90,10 +94,12 @@ func (r *PostgresRepository) GetShortcutByOriginalURL(ctx context.Context, origi
 	defer cancel()
 
 	var shortcut entity.Shortcut
-	row := r.DB.QueryRowContext(childCtx,
-		"SELECT s.uuid, s.original_url, s.short_url, s.created_date, s.deleted_date FROM public.shortcuts s WHERE s.original_url = $1",
-		originalURL)
-	err := row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate, &shortcut.DeletedDate)
+	stmt, err := getSelectStatementByOriginalURL(r.DB, childCtx)
+	if err != nil {
+		return nil, err
+	}
+	row := stmt.QueryRowContext(childCtx, originalURL)
+	err = row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate, &shortcut.DeletedDate)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			//это штатная ситуация
@@ -131,14 +137,12 @@ func (r *PostgresRepository) CreateShortcut(ctx context.Context, originalURL str
 	childCtx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
 
-	row := r.DB.QueryRowContext(childCtx,
-		`INSERT INTO public.shortcuts (uuid, original_url, short_url, user_id) VALUES ($1, $2, $3, $4)
-	returning uuid,
-	original_url,
-	short_url,
-	created_date
-`,
-		shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value(authentification.ContextUserID))
+	stmt, err := getInsertStatement(r.DB, childCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	row := stmt.QueryRowContext(childCtx, shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value(authentification.ContextUserID))
 
 	err = row.Scan(&shortcut.ID, &shortcut.OriginalURL, &shortcut.ShortURL, &shortcut.CreatedDate)
 
@@ -191,9 +195,12 @@ func (r *PostgresRepository) CreateBatch(ctx context.Context, batchInput inout.E
 			ShortURL:    hash,
 		}
 
-		_, err = tx.ExecContext(ctx,
-			"INSERT INTO public.shortcuts (uuid, original_url, short_url, user_id) VALUES ($1, $2, $3, $4)",
-			shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value(authentification.ContextUserID))
+		stmt, err := getInsertStatement(r.DB, ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = tx.Stmt(stmt).ExecContext(ctx, shortcut.ID, shortcut.OriginalURL, shortcut.ShortURL, ctx.Value(authentification.ContextUserID))
 
 		if err != nil {
 			errRollback := tx.Rollback()
@@ -223,9 +230,11 @@ func (r *PostgresRepository) GetShortcutsByUserID(ctx context.Context, userID uu
 	defer cancel()
 
 	var shortcuts []entity.Shortcut
-	rows, err := r.DB.QueryContext(childCtx,
-		"SELECT s.uuid, s.original_url, s.short_url, s.created_date FROM public.shortcuts s WHERE s.user_id = $1",
-		userID)
+	stmt, err := getSelectStatementByUser(r.DB, childCtx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := stmt.QueryContext(childCtx, userID)
 
 	if err != nil {
 		return nil, err
@@ -261,9 +270,46 @@ func (r *PostgresRepository) DeleteList(ctx context.Context, userID uuid.UUID, l
 	childCtx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
 
-	_, err := r.DB.ExecContext(childCtx,
-		`UPDATE public.shortcuts SET deleted_date = NOW() WHERE user_id = $1 AND short_url= ANY($2)`,
-		userID, list)
+	stmt, err := getSoftDeleteStatementByShortURL(r.DB, childCtx)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.ExecContext(childCtx, userID, list)
 
 	return err
+}
+
+func getInsertStatement(db *sql.DB, ctx context.Context) (*sql.Stmt, error) {
+	return sync.OnceValues[*sql.Stmt, error](func() (*sql.Stmt, error) {
+		return db.PrepareContext(ctx, `INSERT INTO public.shortcuts (uuid, original_url, short_url, user_id) VALUES ($1, $2, $3, $4)
+	returning uuid,
+	original_url,
+	short_url,
+	created_date
+`)
+	})()
+}
+
+func getSelectStatementByShortURL(db *sql.DB, ctx context.Context) (*sql.Stmt, error) {
+	return sync.OnceValues[*sql.Stmt, error](func() (*sql.Stmt, error) {
+		return db.PrepareContext(ctx, `SELECT s.uuid, s.original_url, s.short_url, s.created_date, s.deleted_date FROM public.shortcuts s WHERE s.short_url = $1 LIMIT 1`)
+	})()
+}
+
+func getSelectStatementByOriginalURL(db *sql.DB, ctx context.Context) (*sql.Stmt, error) {
+	return sync.OnceValues[*sql.Stmt, error](func() (*sql.Stmt, error) {
+		return db.PrepareContext(ctx, `SELECT s.uuid, s.original_url, s.short_url, s.created_date, s.deleted_date FROM public.shortcuts s WHERE s.original_url = $1 LIMIT 1`)
+	})()
+}
+
+func getSelectStatementByUser(db *sql.DB, ctx context.Context) (*sql.Stmt, error) {
+	return sync.OnceValues[*sql.Stmt, error](func() (*sql.Stmt, error) {
+		return db.PrepareContext(ctx, `SELECT s.uuid, s.original_url, s.short_url, s.created_date FROM public.shortcuts s WHERE s.user_id = $1 AND s.deleted_date IS NULL`)
+	})()
+}
+
+func getSoftDeleteStatementByShortURL(db *sql.DB, ctx context.Context) (*sql.Stmt, error) {
+	return sync.OnceValues[*sql.Stmt, error](func() (*sql.Stmt, error) {
+		return db.PrepareContext(ctx, `UPDATE public.shortcuts SET deleted_date = NOW() WHERE user_id = $1 AND short_url= ANY($2)`)
+	})()
 }

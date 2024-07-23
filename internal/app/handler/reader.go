@@ -21,7 +21,6 @@ func GetShortcutPage(repository repo.Repository) http.HandlerFunc {
 			return
 		}
 
-		fmt.Println("shortcut", shortcut)
 		if shortcut.DeletedDate != nil {
 			BadRequest(fmt.Errorf("shortcut is unavailable"), http.StatusGone)(w, r)
 			return

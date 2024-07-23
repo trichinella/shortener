@@ -108,7 +108,7 @@ func (r *MemoryRepository) CreateBatch(ctx context.Context, batchInput inout.Ext
 func (r *MemoryRepository) GetShortcutsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Shortcut, error) {
 	var shortcuts []entity.Shortcut
 	for _, shortcut := range r.Shortcuts {
-		if shortcut.UserID == userID {
+		if shortcut.UserID == userID && shortcut.DeletedDate == nil {
 			shortcuts = append(shortcuts, shortcut)
 		}
 	}

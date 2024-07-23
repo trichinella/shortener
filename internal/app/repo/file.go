@@ -174,7 +174,7 @@ func (r *FileRepository) CreateBatch(ctx context.Context, batchInput inout.Exter
 func (r *FileRepository) GetShortcutsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Shortcut, error) {
 	var shortcuts []entity.Shortcut
 	for _, shortcut := range r.Shortcuts {
-		if shortcut.UserID == userID {
+		if shortcut.UserID == userID && shortcut.DeletedDate == nil {
 			shortcuts = append(shortcuts, shortcut)
 		}
 	}
