@@ -40,6 +40,10 @@ func easyjson935ce6eeDecodeShortenerInternalAppEntity(in *jlexer.Lexer, out *Sho
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.ID).UnmarshalText(data))
 			}
+		case "user_id":
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.UserID).UnmarshalText(data))
+			}
 		case "short_url":
 			out.ShortURL = string(in.String())
 		case "original_url":
@@ -66,6 +70,11 @@ func easyjson935ce6eeEncodeShortenerInternalAppEntity(out *jwriter.Writer, in Sh
 		const prefix string = ",\"uuid\":"
 		out.RawString(prefix[1:])
 		out.RawText((in.ID).MarshalText())
+	}
+	{
+		const prefix string = ",\"user_id\":"
+		out.RawString(prefix)
+		out.RawText((in.UserID).MarshalText())
 	}
 	{
 		const prefix string = ",\"short_url\":"

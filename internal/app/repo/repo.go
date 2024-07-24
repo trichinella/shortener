@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"github.com/google/uuid"
 	"shortener/internal/app/config"
 	"shortener/internal/app/entity"
 	"shortener/internal/app/handler/inout"
@@ -14,6 +15,8 @@ type Repository interface {
 	GetShortcutByOriginalURL(ctx context.Context, originalURL string) (*entity.Shortcut, error)
 	CreateShortcut(ctx context.Context, originalURL string) (*entity.Shortcut, error)
 	CreateBatch(ctx context.Context, batchInput inout.ExternalBatchInput) (inout.ExternalBatchOutput, error)
+	GetShortcutsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Shortcut, error)
+	DeleteList(ctx context.Context, userID uuid.UUID, list inout.ShortURLList) error
 }
 
 // GetRepo выбор репозитория

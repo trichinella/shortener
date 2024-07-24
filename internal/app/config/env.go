@@ -24,4 +24,9 @@ func (config *MainConfig) updateByEnv() {
 	if envDatabaseDSN != "" {
 		config.DatabaseDSN = envDatabaseDSN
 	}
+
+	envJWTKey := os.Getenv("JWT_KEY")
+	if envJWTKey != "" {
+		config.JWTKey = envJWTKey
+	}
 }

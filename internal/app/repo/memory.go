@@ -8,6 +8,8 @@ import (
 	"shortener/internal/app/handler/inout"
 	"shortener/internal/app/human"
 	"shortener/internal/app/random"
+	"shortener/internal/app/service/authentification"
+	"time"
 )
 
 func CreateMemoryRepository() *MemoryRepository {
@@ -48,6 +50,7 @@ func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL strin
 	shortcut, err := r.GetShortcutByOriginalURL(ctx, originalURL)
 
 	if shortcut != nil {
+
 		return shortcut, NewDuplicateShortcutError(err, shortcut)
 	}
 
@@ -64,10 +67,16 @@ func (r *MemoryRepository) CreateShortcut(ctx context.Context, originalURL strin
 		return nil, err
 	}
 
+	userID, ok := ctx.Value(authentification.ContextUserID).(uuid.UUID)
+	if !ok {
+		userID = uuid.Nil
+	}
+
 	shortcut = &entity.Shortcut{
 		ID:          id,
 		OriginalURL: originalURL,
 		ShortURL:    hash,
+		UserID:      userID,
 	}
 	r.Shortcuts[shortcut.ShortURL] = *shortcut
 
@@ -94,4 +103,33 @@ func (r *MemoryRepository) CreateBatch(ctx context.Context, batchInput inout.Ext
 	}
 
 	return result, nil
+}
+
+func (r *MemoryRepository) GetShortcutsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Shortcut, error) {
+	var shortcuts []entity.Shortcut
+	for _, shortcut := range r.Shortcuts {
+		if shortcut.UserID == userID && shortcut.DeletedDate == nil {
+			shortcuts = append(shortcuts, shortcut)
+		}
+	}
+
+	return shortcuts, nil
+}
+
+func (r *MemoryRepository) DeleteList(ctx context.Context, userID uuid.UUID, list inout.ShortURLList) error {
+	for _, shortURL := range list {
+		shortcut, err := r.GetShortcutByShortURL(ctx, shortURL)
+		if err != nil {
+			continue
+		}
+		if userID != shortcut.UserID {
+			continue
+		}
+
+		now := time.Now()
+		shortcut.DeletedDate = &now
+		r.Shortcuts[shortURL] = *shortcut
+	}
+
+	return nil
 }

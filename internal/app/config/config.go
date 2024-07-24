@@ -5,6 +5,7 @@ type MainConfig struct {
 	ServerHost      string
 	FileStoragePath string
 	DatabaseDSN     string
+	JWTKey          string
 }
 
 func newConfig() *MainConfig {

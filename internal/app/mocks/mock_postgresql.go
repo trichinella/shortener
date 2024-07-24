@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -38,16 +39,16 @@ func (m *MockPingable) EXPECT() *MockPingableMockRecorder {
 	return m.recorder
 }
 
-// Ping mocks base method.
-func (m *MockPingable) Ping() error {
+// PingContext mocks base method.
+func (m *MockPingable) PingContext(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ping")
+	ret := m.ctrl.Call(m, "PingContext", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Ping indicates an expected call of Ping.
-func (mr *MockPingableMockRecorder) Ping() *gomock.Call {
+// PingContext indicates an expected call of PingContext.
+func (mr *MockPingableMockRecorder) PingContext(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockPingable)(nil).Ping))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PingContext", reflect.TypeOf((*MockPingable)(nil).PingContext), arg0)
 }

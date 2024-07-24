@@ -40,29 +40,31 @@ func TestPingDataBase(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		m := mocks.NewMockPingable(ctrl)
-		m.EXPECT().Ping().Return(tt.args.err)
-
-		router := chi.NewRouter()
-		router.Get(`/ping`, PingDataBase(m))
-		ts := httptest.NewServer(router)
-
 		t.Run(tt.name, func(t *testing.T) {
-			req, err := http.NewRequest(http.MethodGet, string(ts.URL)+"/ping", nil)
-			req.Header.Set("Content-Type", "text/plain")
+			m := mocks.NewMockPingable(ctrl)
+			m.EXPECT().PingContext(gomock.Any()).Return(tt.args.err)
 
-			require.NoError(t, err)
+			router := chi.NewRouter()
+			router.Get(`/ping`, PingDataBase(m))
+			ts := httptest.NewServer(router)
 
-			client := ts.Client()
-			resp, err := client.Do(req)
-			require.NoError(t, err)
+			t.Run(tt.name, func(t *testing.T) {
+				req, err := http.NewRequest(http.MethodGet, string(ts.URL)+"/ping", nil)
+				req.Header.Set("Content-Type", "text/plain")
 
-			defer func() {
-				err := resp.Body.Close()
 				require.NoError(t, err)
-			}()
 
-			assert.Equal(t, tt.want, resp.StatusCode)
+				client := ts.Client()
+				resp, err := client.Do(req)
+				require.NoError(t, err)
+
+				defer func() {
+					err := resp.Body.Close()
+					require.NoError(t, err)
+				}()
+
+				assert.Equal(t, tt.want, resp.StatusCode)
+			})
 		})
 	}
 }

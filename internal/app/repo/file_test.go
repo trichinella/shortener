@@ -3,6 +3,7 @@ package repo
 import (
 	"bytes"
 	"context"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -173,7 +174,7 @@ func LineCounter(r io.Reader) (int, error) {
 		count += bytes.Count(buf[:c], lineSep)
 
 		switch {
-		case err == io.EOF:
+		case errors.Is(err, io.EOF):
 			return count, nil
 
 		case err != nil:

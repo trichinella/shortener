@@ -11,6 +11,7 @@ type options struct {
 	DisplayLink     string
 	FileStoragePath string
 	DatabaseDSN     string
+	JWTKey          string
 }
 
 var baseOptions = options{}
@@ -20,6 +21,7 @@ func init() {
 	flag.StringVar(&baseOptions.DisplayLink, "b", "http://localhost:8080", "Link displays for user")
 	flag.StringVar(&baseOptions.DatabaseDSN, "d", "", "DSN for database")
 	flag.StringVar(&baseOptions.FileStoragePath, "f", os.TempDir()+"/short-url-db-test.json", "File path for storage")
+	flag.StringVar(&baseOptions.JWTKey, "jk", "simple_test_secret_key", "JWT key")
 }
 
 func (config *MainConfig) updateByFlags(o options) {

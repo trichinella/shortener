@@ -24,6 +24,7 @@ func (s *CustomServer) Run() {
 	}
 
 	s.Router = chi.NewRouter()
+	s.Router.Use(middleware.AuthMiddleware())
 	s.Router.Use(middleware.Compress())
 	s.Router.Use(middleware.LogMiddleware())
 	fillHandler(s.Router, mainRepo, s.DB)
@@ -39,6 +40,8 @@ func fillHandler(router chi.Router, repo repo.Repository, db *sql.DB) {
 	router.Get(`/{shortURL}`, handler.GetShortcutPage(repo))
 	router.Post(`/api/shorten`, handler.CreateShortcutJSON(repo))
 	router.Post(`/api/shorten/batch`, handler.CreateShortcutBatchJSON(repo))
+	router.Get(`/api/user/urls`, handler.GetShortcutsByUser(repo))
+	router.Delete(`/api/user/urls`, handler.DeleteUserURL(repo))
 	router.Post(`/`, handler.CreateShortcutPlain(repo))
 	router.Get(`/ping`, handler.PingDataBase(db))
 }
