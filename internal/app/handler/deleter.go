@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/mailru/easyjson"
@@ -33,7 +34,7 @@ func DeleteUserURL(repository repo.Repository) http.HandlerFunc {
 		}
 
 		go func() {
-			err = repository.DeleteList(r.Context(), userID, deletingList)
+			err = repository.DeleteList(context.Background(), userID, deletingList)
 			if err != nil {
 				logging.Sugar.Error(fmt.Errorf("при удалении списка возникла ошибка %w", err))
 			}
