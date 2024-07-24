@@ -192,7 +192,7 @@ func (r *FileRepository) DeleteList(ctx context.Context, userID uuid.UUID, list 
 			continue
 		}
 
-		now := time.Now()
+		now := time.Now().UTC()
 		shortcut.DeletedDate = &now
 		r.Shortcuts[shortURL] = *shortcut
 	}

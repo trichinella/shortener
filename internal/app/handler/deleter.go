@@ -10,6 +10,7 @@ import (
 	"shortener/internal/app/logging"
 	"shortener/internal/app/repo"
 	"shortener/internal/app/service/authentification"
+	"time"
 )
 
 func DeleteUserURL(repository repo.Repository) http.HandlerFunc {
@@ -34,7 +35,11 @@ func DeleteUserURL(repository repo.Repository) http.HandlerFunc {
 		}
 
 		go func() {
-			err = repository.DeleteList(context.Background(), userID, deletingList)
+			localCtx := context.Background()
+			localTimeCtx, cancel := context.WithTimeout(localCtx, time.Second*3)
+			defer cancel()
+
+			err = repository.DeleteList(localTimeCtx, userID, deletingList)
 			if err != nil {
 				logging.Sugar.Error(fmt.Errorf("при удалении списка возникла ошибка %w", err))
 			}
